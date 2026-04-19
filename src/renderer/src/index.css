@@ -17,3 +17,26 @@
 .no-drag-region {
   -webkit-app-region: no-drag;
 }
+/* V1 Polish: Resizing Handles & Dotted GridOverrides */
+.tl-resize-handle {
+    border-radius: 4px !important;
+    background: rgba(59, 130, 246, 0.4) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    backdrop-filter: blur(4px) !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
+    transition: all 0.2s ease-out;
+}
+
+.tl-resize-handle:hover {
+    background: rgba(59, 130, 246, 0.9) !important;
+    transform: scale(1.2);
+}
+
+.tl-grid {
+    opacity: 0.15 !important; 
+    filter: invert(1) hue-rotate(180deg) brightness(2) !important;
+}
+
+.tl-grid line {
+   stroke-dasharray: 2 4 !important;
+}
