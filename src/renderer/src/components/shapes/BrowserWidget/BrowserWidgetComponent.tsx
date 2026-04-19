@@ -23,12 +23,8 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       const captureInterval = setInterval(async () => {
         try {
           if (webviewRef.current.capturePage) {
-            const image = await webviewRef.current.capturePage()
-            if (!image || (image.isEmpty && image.isEmpty())) return
-            const dataUrl = image.toDataURL()
-            if (!dataUrl || dataUrl === 'data:image/png;base64,') return
-            
-            updateWidget(widget.id, { screenshotBase64: dataUrl })
+            // DO NOT process page captures, Chromium forbids it currently
+            return;
           }
         } catch (e) {
           console.error('Failed to capture page', e)
@@ -58,29 +54,7 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
         shapeBounds.minY > bounds.maxY + buffer
       // Automatic sleeping tab logic
       if (isOffScreen && widget.interactionState === 'active') {
-        // Try capture before sleep
-        if (webviewRef.current?.capturePage) {
-          try {
-            webviewRef.current.capturePage().then(async (image: any) => {
-              if (!image || (image.isEmpty && image.isEmpty())) throw new Error('Empty image')
-              const dataUrl = image.toDataURL()
-              if (!dataUrl || dataUrl === 'data:image/png;base64,') throw new Error('Empty image')
-              
-              updateWidget(widget.id, { 
-                interactionState: 'sleeping',
-                screenshotBase64: dataUrl
-              })
-            }).catch((err: any) => {
-               console.warn('capturePage error:', err)
-               updateWidget(widget.id, { interactionState: 'sleeping' })
-            })
-          } catch (e) {
-             console.error('Failed to trigger capturePage:', e)
-             updateWidget(widget.id, { interactionState: 'sleeping' })
-          }
-        } else {
-           updateWidget(widget.id, { interactionState: 'sleeping' })
-        }
+        updateWidget(widget.id, { interactionState: 'sleeping' })
       } else if (!isOffScreen && widget.interactionState === 'sleeping') {
         updateWidget(widget.id, { interactionState: 'active' })
       }
