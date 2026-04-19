@@ -105,25 +105,6 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
   // SLEEPING STATE
   if (widget.interactionState === 'sleeping') {
     return (
-      <div className="w-full h-full bg-surface-container-high rounded-2xl border border-outline-variant/20 shadow-[0_24px_48px_rgba(0,0,0,0.4)] overflow-hidden relative group">
-        <div className="absolute inset-0 bg-surface-container-lowest/70 backdrop-blur-md z-10 flex flex-col items-center justify-center transition-opacity">
-          <Moon className="w-12 h-12 text-on-surface-variant/60 mb-4" />
-          <span className="text-sm font-medium text-on-surface-variant">Sleeping</span>
-          <button 
-            className="mt-6 px-6 py-2 bg-surface-container-highest rounded-full text-xs font-semibold uppercase tracking-widest text-primary border border-outline-variant/20 hover:bg-primary-container/20 transition-colors pointer-events-auto"
-            onPointerDown={handlePointerDown}
-            onClick={() => updateWidget(widget.id, { interactionState: 'active' })}
-          >
-            Wake
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // SLEEPING STATE
-  if (widget.interactionState === 'sleeping') {
-    return (
       <div className="w-full h-full bg-surface-container-high rounded-2xl shadow-xl border border-outline-variant/30 flex flex-col overflow-hidden relative no-drag-region cursor-pointer group">
         <div className="h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4">
           <div className="flex items-center gap-2">
