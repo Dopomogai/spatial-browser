@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+
 import { create } from 'zustand'
 import { set, get } from 'idb-keyval'
 
