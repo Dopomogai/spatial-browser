@@ -3,6 +3,12 @@ import { useCanvasStore } from '../../../store/useCanvasStore'
 import { Globe, X, Moon, Maximize2 } from 'lucide-react'
 import { useEditor } from 'tldraw'
 
+// Helper to validate base64 strings so React avoids passing garbage to <img> tags
+const isValidDataUrl = (str: string | undefined): boolean => {
+  if (!str) return false;
+  return str.startsWith('data:image/png;base64,') && str.length > 30; // Minimum length check to avoid empty generic data URLs
+}
+
 export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
   const { widgets, updateWidget, removeWidget, isSpacebarHeld } = useCanvasStore()
   const widget = widgets[shape.props.widgetId]
@@ -109,7 +115,7 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
         }}
       >
         <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center text-primary">
-          {widget.faviconUrl ? <img src={widget.faviconUrl} className="w-4 h-4" /> : <Globe size={14} />}
+          {isValidDataUrl(widget.faviconUrl) ? <img src={widget.faviconUrl} className="w-4 h-4" /> : <Globe size={14} />}
         </div>
         <span className="text-sm font-medium text-on-surface truncate flex-1">{widget.title || new URL(widget.url).hostname}</span>
         <button 
@@ -137,7 +143,7 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
             Wake
           </button>
         </div>
-        {widget.screenshotBase64 && (
+        {isValidDataUrl(widget.screenshotBase64) && (
           <img src={widget.screenshotBase64} className="w-full h-full object-cover blur-[2px] opacity-30 absolute inset-0" />
         )}
       </div>
@@ -162,7 +168,7 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
           </div>
         </div>
         <div className="flex-1 w-full bg-surface-container flex items-center justify-center relative overflow-hidden">
-          {widget.screenshotBase64 ? (
+          {isValidDataUrl(widget.screenshotBase64) ? (
             <img src={widget.screenshotBase64} className="w-full h-full object-cover opacity-30 blur-[2px] transition-all group-hover:opacity-50" />
           ) : (
             <div className="text-on-surface-variant/30 font-semibold uppercase tracking-widest text-sm flex items-center gap-2">
@@ -185,7 +191,7 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
   if (widget.interactionState === 'minimized') {
     return (
       <div className="w-full h-full bg-surface-container-high rounded-full shadow-lg border border-outline-variant/30 flex items-center px-4 gap-3 relative group no-drag-region cursor-pointer hover:bg-surface-container-highest transition-colors">
-        {widget.faviconUrl ? <img src={widget.faviconUrl} className="w-4 h-4" /> : <Globe size={16} className="text-primary" />}
+        {isValidDataUrl(widget.faviconUrl) ? <img src={widget.faviconUrl} className="w-4 h-4" /> : <Globe size={16} className="text-primary" />}
         <span className="text-sm font-semibold text-on-surface truncate flex-1">{widget.title || widget.url}</span>
         
         {/* Restore Button (Hidden until hover) */}
@@ -238,7 +244,7 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
         
         <div className="flex-1 mx-8 flex justify-center">
           <div className="bg-surface-container-high px-4 py-1.5 rounded-full text-xs font-mono text-on-surface-variant/80 border border-outline-variant/20 flex items-center gap-2 max-w-sm w-full truncate">
-            {widget.faviconUrl ? <img src={widget.faviconUrl} className="w-3 h-3" /> : <Globe size={12} />}
+            {isValidDataUrl(widget.faviconUrl) ? <img src={widget.faviconUrl} className="w-3 h-3" /> : <Globe size={12} />}
             <span className="truncate">{widget.url}</span>
           </div>
         </div>
