@@ -61,25 +61,34 @@ const CanvasContent = () => {
   useEffect(() => {
     const checkViewport = () => {
       const bounds = editor.getViewportPageBounds()
-      const buffer = 500 // 500px buffer zone
+      const scale = editor.getCamera().z // Get current zoom level
+      const buffer = 500 / scale // Dynamically adjust buffer based on zoom
       const widgetsEntries = Object.values(useCanvasStore.getState().widgets);
+      
       widgetsEntries.forEach(widget => {
         if (widget.interactionState === 'minimized') return;
         const shapeId = createShapeId(widget.id)
         const shape = editor.getShape(shapeId)
         if (!shape) return
-        // Get absolute coordinates on canvas
+        
         const shapePageBounds = editor.getShapePageBounds(shape)
         if (!shapePageBounds) return
-        // Check if shape is off screen
-        const isOffScreen = 
-          shapePageBounds.maxX < bounds.minX - buffer ||
-          shapePageBounds.minX > bounds.maxX + buffer ||
-          shapePageBounds.maxY < bounds.minY - buffer ||
-          shapePageBounds.minY > bounds.maxY + buffer
-        if (isOffScreen && widget.interactionState === 'active') {
+
+        // 1. Calculate how far the widget is from the viewport
+        const distanceX = Math.max(0, bounds.minX - shapePageBounds.maxX, shapePageBounds.minX - bounds.maxX)
+        const distanceY = Math.max(0, bounds.minY - shapePageBounds.maxY, shapePageBounds.minY - bounds.maxY)
+        
+        // 2. Hysteresis band (Wake up when close, sleep when far)
+        const WAKE_THRESHOLD = buffer            // Needs to be this close to wake up
+        const SLEEP_THRESHOLD = buffer + (300 / scale)  // Needs to be this far to sleep
+
+        const isDeepOffScreen = distanceX > SLEEP_THRESHOLD || distanceY > SLEEP_THRESHOLD
+        const isCloseToScreen = distanceX < WAKE_THRESHOLD && distanceY < WAKE_THRESHOLD
+
+        // 3. Apply state checks with hysteresis to prevent fighting loops
+        if (isDeepOffScreen && widget.interactionState === 'active') {
           updateWidget(widget.id, { interactionState: 'sleeping' })
-        } else if (!isOffScreen && widget.interactionState === 'sleeping') {
+        } else if (isCloseToScreen && widget.interactionState === 'sleeping') {
           updateWidget(widget.id, { interactionState: 'active' })
         }
       })
