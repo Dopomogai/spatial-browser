@@ -21,10 +21,8 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
             if (!image || (image.isEmpty && image.isEmpty())) return
             const dataUrl = image.toDataURL()
             if (!dataUrl || dataUrl === 'data:image/png;base64,') return
-            const res = await fetch(dataUrl)
-            const blob = await res.blob()
-            if (blob.size === 0) return
-            updateWidget(widget.id, { screenshotBase64: URL.createObjectURL(blob) })
+            
+            updateWidget(widget.id, { screenshotBase64: dataUrl })
           }
         } catch (e) {
           console.error('Failed to capture page', e)
@@ -61,12 +59,10 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
               if (!image || (image.isEmpty && image.isEmpty())) throw new Error('Empty image')
               const dataUrl = image.toDataURL()
               if (!dataUrl || dataUrl === 'data:image/png;base64,') throw new Error('Empty image')
-              const res = await fetch(dataUrl)
-              const blob = await res.blob()
-              if (blob.size === 0) throw new Error('Empty image')
+              
               updateWidget(widget.id, { 
                 interactionState: 'sleeping',
-                screenshotBase64: URL.createObjectURL(blob)
+                screenshotBase64: dataUrl
               })
             }).catch((err: any) => {
                console.warn('capturePage error:', err)
