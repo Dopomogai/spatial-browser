@@ -143,9 +143,9 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
             Wake
           </button>
         </div>
-        {isValidDataUrl(widget.screenshotBase64) && (
+        {isValidDataUrl(widget.screenshotBase64) ? (
           <img src={widget.screenshotBase64} className="w-full h-full object-cover blur-[2px] opacity-30 absolute inset-0" />
-        )}
+        ) : null}
       </div>
     )
   }
