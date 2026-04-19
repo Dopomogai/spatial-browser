@@ -42,9 +42,13 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
     }
 
     const handleDidNavigate = (e: any) => {
+      // Always store the current active URL into the layout store so when this widget goes to sleep,
+      // it wakes up exactly where it was left.
       if (e.url !== widget.url) {
         updateWidget(widget.id, { url: e.url })
       }
+      setCanGoBack(webviewRef.current?.canGoBack() || false)
+      setCanGoForward(webviewRef.current?.canGoForward() || false)
     }
     
     const handleDidNavigateInPage = (e: any) => {
@@ -52,6 +56,8 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       if (e.url !== widget.url && e.isMainFrame) {
         updateWidget(widget.id, { url: e.url })
       }
+      setCanGoBack(webviewRef.current?.canGoBack() || false)
+      setCanGoForward(webviewRef.current?.canGoForward() || false)
     }
 
     const handlePageTitleUpdated = (e: any) => {
@@ -60,6 +66,10 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       }
     }
 
+    webview.addEventListener('did-start-loading', () => {
+         setCanGoBack(webviewRef.current?.canGoBack() || false)
+         setCanGoForward(webviewRef.current?.canGoForward() || false)
+    })
     webview.addEventListener('did-navigate', handleDidNavigate)
     webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage)
     webview.addEventListener('page-title-updated', handlePageTitleUpdated)
