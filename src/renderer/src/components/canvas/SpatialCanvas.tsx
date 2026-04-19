@@ -146,6 +146,8 @@ export const SpatialCanvas: React.FC = () => {
           backgroundPosition: '0 0'
         }}
       />
+      {/* Temporary Developer Data Sync Overlay (Hidden for end-users) */}
+      {/* 
       <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 1000, background: 'rgba(0,0,0,0.8)', padding: '10px', borderRadius: '8px', color: 'white', display: 'flex', gap: '10px', alignItems: 'center' }}>
           <select 
              value={currentProfileId} 
@@ -164,7 +166,8 @@ export const SpatialCanvas: React.FC = () => {
           <div style={{ width: '1px', height: '20px', background: 'gray', margin: '0 5px' }}></div>
           <button onClick={undo} style={{ background: '#333', padding: '4px 8px', borderRadius: '4px' }}>Undo</button>
           <button onClick={redo} style={{ background: '#333', padding: '4px 8px', borderRadius: '4px' }}>Redo</button>
-      </div>
+      </div> 
+      */}
       <Tldraw 
         shapeUtils={customShapeUtils}
         components={{
