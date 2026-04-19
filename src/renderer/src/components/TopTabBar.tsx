@@ -65,8 +65,8 @@ export const TopTabBar: React.FC = () => {
 
                 <button 
                   onClick={() => {
-                    const name = prompt('Name this new canvas profile:')
-                    if (name) useCanvasStore.getState().saveProfileAs(name)
+                    // Use a custom modal state/event instead of blocking prompt() in renderer
+                    window.dispatchEvent(new CustomEvent('open-new-profile-modal'))
                   }}
                   className="text-on_surface_variant hover:text-white transition-colors ml-2" 
                   title="Save Canvas As New Profile"
