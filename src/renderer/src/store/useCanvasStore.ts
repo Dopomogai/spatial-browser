@@ -18,25 +18,46 @@ export interface SpatialWidget {
   lastActive: number      // Unix timestamp
 }
 
+export interface WorkspaceProfile {
+  id: string
+  name: string
+  widgets: Record<string, SpatialWidget>
+}
+
 export interface CanvasStore {
   widgets: Record<string, SpatialWidget>
+  currentProfileId: string
+  profiles: WorkspaceProfile[]
   isOmnibarOpen: boolean
   isSpacebarHeld: boolean
+  omnibarPosition: { x: number; y: number } | null
+  undoStack: Array<{ id: string; oldState: Partial<SpatialWidget>; newState: Partial<SpatialWidget> }>
+  redoStack: Array<{ id: string; oldState: Partial<SpatialWidget>; newState: Partial<SpatialWidget> }>
   addWidget: (url: string, x: number, y: number) => void
   updateWidget: (id: string, updates: Partial<SpatialWidget>) => void
   removeWidget: (id: string) => void
-  setOmnibarOpen: (open: boolean) => void
+  setOmnibarOpen: (open: boolean, position?: { x: number; y: number } | null) => void
   setSpacebarHeld: (held: boolean) => void
   loadInitialState: () => Promise<void>
+  loadProfile: (profileId: string) => void
+  saveProfileAs: (name: string) => void
+  deleteProfile: (profileId: string) => void
+  undo: () => void
+  redo: () => void
 }
 
 // Debounce for saving to IDB to avoid performance hits
 let saveTimeout: NodeJS.Timeout
 
-export const useCanvasStore = create<CanvasStore>((setStore, getStore) => ({
+export const useCanvasStore = create<CanvasStore>((setStore) => ({
   widgets: {},
+  currentProfileId: 'default',
+  profiles: [{ id: 'default', name: 'Default Profile', widgets: {} }],
   isOmnibarOpen: false,
   isSpacebarHeld: false,
+  omnibarPosition: null, // Stores screen coords for right-click spawn
+  undoStack: [],
+  redoStack: [],
 
   addWidget: (url, x, y) => {
     const id = `browser_widget_${Date.now()}`
@@ -65,12 +86,30 @@ export const useCanvasStore = create<CanvasStore>((setStore, getStore) => ({
   updateWidget: (id, updates) => {
     setStore((state) => {
       if (!state.widgets[id]) return state
+      
+      const oldState = {} as Partial<SpatialWidget>
+      for (const k in updates) { // record the old values for the updated keys 
+        oldState[k] = state.widgets[id][k] 
+      }
       const newWidgets = {
         ...state.widgets,
         [id]: { ...state.widgets[id], ...updates }
       }
-      persistState(newWidgets)
-      return { widgets: newWidgets }
+
+      // Add to undo stack if position or size changed
+      let newUndoStack = state.undoStack
+      if ('x' in updates || 'y' in updates || 'w' in updates || 'h' in updates) {
+          newUndoStack = [...state.undoStack, { id, oldState, newState: updates }].slice(-50) // keep last 50
+      }
+
+      const newState = { 
+          widgets: newWidgets,
+          undoStack: newUndoStack,
+          redoStack: newUndoStack.length !== state.undoStack.length ? [] : state.redoStack
+      }
+
+      persistState(newState)
+      return newState
     })
   },
 
@@ -83,28 +122,149 @@ export const useCanvasStore = create<CanvasStore>((setStore, getStore) => ({
     })
   },
 
-  setOmnibarOpen: (open) => setStore({ isOmnibarOpen: open }),
+  setOmnibarOpen: (open, position = null) => setStore({ isOmnibarOpen: open, omnibarPosition: position }),
   
   setSpacebarHeld: (held) => setStore({ isSpacebarHeld: held }),
 
   loadInitialState: async () => {
     try {
-      const stored = await get<Record<string, SpatialWidget>>('spatial-canvas-widgets')
+      const stored = await get<CanvasStore>('spatial-canvas-state')
       if (stored) {
-        setStore({ widgets: stored })
+        setStore({ ...stored, isOmnibarOpen: false, omnibarPosition: null })
       }
     } catch (e) {
       console.error('Failed to load local DB', e)
     }
+  },
+
+  loadProfile: (profileId: string) => {
+      setStore((state) => {
+          const profile = state.profiles.find(p => p.id === profileId)
+          if (!profile) return state
+          
+          const newState = { 
+              ...state, 
+              currentProfileId: profileId, 
+              widgets: profile.widgets,
+              undoStack: [], // clear stacks on profile load
+              redoStack: []
+          }
+          persistState(newState)
+          return newState
+      })
+  },
+
+  saveProfileAs: (name: string) => {
+      setStore((state) => {
+          const id = `profile_${Date.now()}`
+          const newProfile: WorkspaceProfile = {
+              id,
+              name,
+              widgets: state.widgets // clone current active widgets into a new profile
+          }
+          const newProfiles = [...state.profiles, newProfile]
+          const newState = {
+              ...state,
+              profiles: newProfiles,
+              currentProfileId: id
+          }
+          persistState(newState)
+          return newState
+      })
+  },
+
+  deleteProfile: (profileId: string) => {
+      setStore((state) => {
+          if (profileId === 'default' || state.profiles.length === 1) return state // cannot delete last profile or default
+          
+          const newProfiles = state.profiles.filter(p => p.id !== profileId)
+          const newState = { ...state, profiles: newProfiles }
+
+          if (state.currentProfileId === profileId) { // switch to default if current deleted
+             newState.currentProfileId = 'default'
+             newState.widgets = newProfiles.find(p => p.id === 'default')?.widgets || {}
+             newState.undoStack = []
+             newState.redoStack = []
+          }
+
+          persistState(newState)
+          return newState
+      })
+  },
+
+  undo: () => {
+      setStore((state) => {
+          if (state.undoStack.length === 0) return state
+
+          const lastAction = state.undoStack[state.undoStack.length - 1]
+          const newUndoStack = state.undoStack.slice(0, -1)
+          const newRedoStack = [...state.redoStack, lastAction]
+          
+          // Revert widget state
+          const newWidgets = { ...state.widgets }
+          if (newWidgets[lastAction.id]) {
+               newWidgets[lastAction.id] = { ...newWidgets[lastAction.id], ...lastAction.oldState }
+          }
+          
+          const newState = {
+              ...state,
+              widgets: newWidgets,
+              undoStack: newUndoStack,
+              redoStack: newRedoStack
+          }
+          persistState(newState)
+          return newState
+      })
+  },
+
+  redo: () => {
+      setStore((state) => {
+           if (state.redoStack.length === 0) return state
+
+           const nextAction = state.redoStack[state.redoStack.length - 1]
+           const newRedoStack = state.redoStack.slice(0, -1)
+           const newUndoStack = [...state.undoStack, nextAction]
+
+           const newWidgets = { ...state.widgets }
+           if (newWidgets[nextAction.id]) {
+               newWidgets[nextAction.id] = { ...newWidgets[nextAction.id], ...nextAction.newState }
+           }
+
+           const newState = {
+               ...state,
+               widgets: newWidgets,
+               undoStack: newUndoStack,
+               redoStack: newRedoStack
+           }
+           persistState(newState)
+           return newState
+      })
   }
+
 }))
 
-function persistState(widgets: Record<string, SpatialWidget>) {
-  const widgetsToSave = Object.fromEntries(
-    Object.entries(widgets).map(([id, w]) => [id, { ...w, screenshotBase64: null }])
-  )
+function persistState(state: Partial<CanvasStore>) {
   clearTimeout(saveTimeout)
   saveTimeout = setTimeout(() => {
-    set('spatial-canvas-widgets', widgetsToSave).catch(console.error)
+    
+    // Auto-update the current profile in the profiles list
+    let profilesToSave = state.profiles || []
+    if (state.currentProfileId && state.widgets) {
+        profilesToSave = profilesToSave.map(p => 
+            p.id === state.currentProfileId 
+                ? { ...p, widgets: state.widgets as Record<string, SpatialWidget> } 
+                : p
+        )
+    }
+
+    const stateToSave = {
+        ...state,
+        profiles: profilesToSave,
+        omnibarPosition: null, // do not persist UI states
+        isOmnibarOpen: false,
+        isSpacebarHeld: false
+    }
+
+    set('spatial-canvas-state', stateToSave).catch(console.error)
   }, 1000)
 }

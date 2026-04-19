@@ -4,7 +4,7 @@ import { Search } from 'lucide-react'
 import { useEditor } from 'tldraw'
 
 export const Omnibar: React.FC = () => {
-  const { isOmnibarOpen, setOmnibarOpen, addWidget } = useCanvasStore()
+  const { isOmnibarOpen, setOmnibarOpen, addWidget, omnibarPosition } = useCanvasStore()
   const [url, setUrl] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   
@@ -12,10 +12,10 @@ export const Omnibar: React.FC = () => {
   const editor = useEditor()
 
   useEffect(() => {
-    if (isOmnibarOpen) {
-      inputRef.current?.focus()
+    if (isOmnibarOpen && inputRef.current) {
+        inputRef.current.focus()
     } else {
-      setUrl('')
+        setUrl('')
     }
   }, [isOmnibarOpen])
 
@@ -40,36 +40,57 @@ export const Omnibar: React.FC = () => {
       finalUrl = `https://${finalUrl}`
     }
 
-    const bounds = editor.getViewportPageBounds()
-    const centerX = bounds.x + bounds.w / 2 - 400 // half of default widget width
-    const centerY = bounds.y + bounds.h / 2 - 300 // half of default widget height
+    let centerX = 0
+    let centerY = 0
+    
+    if (omnibarPosition) {
+        const pagePos = editor.screenToPage({ x: omnibarPosition.x, y: omnibarPosition.y })
+        centerX = pagePos.x
+        centerY = pagePos.y
+    } else {
+        const bounds = editor.getViewportPageBounds()
+        centerX = bounds.x + bounds.w / 2 - 400 // half of default widget width
+        centerY = bounds.y + bounds.h / 2 - 300 // half of default widget height
+    }
 
     addWidget(finalUrl, centerX, centerY)
     setOmnibarOpen(false)
   }
 
+  // Calculate style based on whether omnibarPosition is set
+  const containerStyle: React.CSSProperties = omnibarPosition ? {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      transform: `translate(${omnibarPosition.x}px, ${omnibarPosition.y}px)`,
+      zIndex: 1000,
+  } : {
+      position: 'fixed',
+      top: '20%',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      zIndex: 1000,
+  }
+
   return (
-    <div className="fixed inset-0 z-[9999] bg-background/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="absolute inset-0" onClick={() => setOmnibarOpen(false)} />
-      
+    <div style={containerStyle}>
       <form 
         onSubmit={handleSubmit}
-        className="relative z-10 w-full max-w-2xl bg-surface-container-highest/80 backdrop-blur-2xl rounded-2xl border border-outline-variant/30 shadow-[0_24px_48px_rgba(0,0,0,0.5)] p-2 flex items-center gap-3"
+        className="w-[600px] bg-neutral-900 rounded-xl shadow-2xl overflow-hidden border border-neutral-800 flex flex-col"
       >
-        <div className="pl-4">
-          <Search className="w-6 h-6 text-primary/80" />
+        <div className="flex items-center px-4 py-4 gap-4">
+          <Search className="w-6 h-6 text-neutral-400" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="Search or enter URL, then hit Enter"
+            className="flex-1 bg-transparent text-white text-xl outline-none placeholder:text-neutral-500"
+          />
         </div>
-        <input
-          ref={inputRef}
-          type="text"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="Enter a URL or search..."
-          className="flex-1 bg-transparent border-none text-xl text-on-surface focus:ring-0 focus:outline-none placeholder:text-on-surface-variant/40 py-4"
-        />
-        <div className="pr-4 flex items-center gap-2 text-xs text-on-surface-variant/60 font-semibold tracking-widest uppercase">
-          <kbd className="px-2 py-1 bg-surface-container-low rounded border border-outline-variant/20">↵</kbd>
-          to open
+        <div className="bg-neutral-800/50 px-4 py-2 flex justify-between text-xs text-neutral-500 border-t border-neutral-800">
+          <span>Press Enter to open and Esc to cancel</span>
         </div>
       </form>
     </div>

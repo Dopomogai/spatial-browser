@@ -60,7 +60,7 @@ export default {
         label: ["Inter", "sans-serif"]
       },
       backgroundImage: {
-        'dot-grid': 'radial-gradient(circle, #353437 1px, transparent 1px)'
+        'dot-grid': 'radial-gradient(circle, var(--tw-colors-surface-container-highest) 1px, transparent 1px)'
       }
     },
   },

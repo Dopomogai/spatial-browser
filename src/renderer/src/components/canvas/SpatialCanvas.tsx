@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from 'react'
-import { Tldraw, useEditor, createShapeId, DefaultCanvas } from 'tldraw'
+import { Tldraw, useEditor, createShapeId } from 'tldraw'
 import 'tldraw/tldraw.css'
 import { BrowserWidgetShapeUtil } from '../shapes/BrowserWidget/BrowserWidgetShapeUtil'
 import { useCanvasStore } from '../../store/useCanvasStore'
 import { Omnibar } from '../ui/Omnibar'
+import { Minimap } from '../ui/Minimap'
 
 const customShapeUtils = [BrowserWidgetShapeUtil]
 
 const CanvasContent = () => {
   const editor = useEditor()
-  const { widgets, addWidget, updateWidget } = useCanvasStore()
-  const [initialized, setInitialized] = useState(false)
-
-  // Sync state from Zustand to TLDraw (initial load)
+  const { widgets, updateWidget } = useCanvasStore()
+  // Sync index creation once. We'll simply let the 'initialized' ref stay unused for state setting
+  // to avoid cascading renders.
+  const isInitialized = React.useRef(false);
   useEffect(() => {
-    if (!initialized && Object.keys(widgets).length > 0) {
+    if (!isInitialized.current && Object.keys(widgets).length > 0) {
       Object.values(widgets).forEach(widget => {
         const shapeId = createShapeId(widget.id)
         if (!editor.getShape(shapeId)) {
@@ -31,16 +32,16 @@ const CanvasContent = () => {
           } as any)
         }
       })
-      setInitialized(true)
+      isInitialized.current = true;
     }
-  }, [editor, widgets, initialized])
+  }, [editor, widgets])
 
   // Sync TLDraw changes back to Zustand
   useEffect(() => {
     const unsubscribe = editor.store.listen((updates) => {
       // Check for shape updates (movement, resize)
       Object.values(updates.changes.updated).forEach((change) => {
-        const [oldShape, newShape] = change as any
+        const [, newShape] = change as any
         if (newShape.type === 'browser_widget') {
           updateWidget(newShape.props.widgetId, {
             x: newShape.x,
@@ -63,10 +64,14 @@ const CanvasContent = () => {
   // Viewport Intersection Check (The Sleeping Tab mechanism)
   useEffect(() => {
     const checkViewport = () => {
-      const bounds = editor.getViewportScreenBounds()
+      const bounds = editor.getViewportPageBounds()
       const buffer = 500 // 500px buffer zone
       
-      Object.values(widgets).forEach(widget => {
+      const widgetsEntries = Object.values(useCanvasStore.getState().widgets);
+      
+      widgetsEntries.forEach(widget => {
+        if (widget.interactionState === 'minimized') return;
+
         const shapeId = createShapeId(widget.id)
         const shape = editor.getShape(shapeId)
         if (!shape) return
@@ -75,26 +80,33 @@ const CanvasContent = () => {
         const shapePageBounds = editor.getShapePageBounds(shape)
         if (!shapePageBounds) return
 
-        // Check if shape is inside the expanded viewport
-        const isVisible = (
-          shapePageBounds.maxX > (bounds.minX - buffer) &&
-          shapePageBounds.minX < (bounds.maxX + buffer) &&
-          shapePageBounds.maxY > (bounds.minY - buffer) &&
-          shapePageBounds.minY < (bounds.maxY + buffer)
-        )
+        // Check if shape is off screen
+        const isOffScreen = 
+          shapePageBounds.maxX < bounds.minX - buffer ||
+          shapePageBounds.minX > bounds.maxX + buffer ||
+          shapePageBounds.maxY < bounds.minY - buffer ||
+          shapePageBounds.minY > bounds.maxY + buffer
 
-        if (!isVisible && widget.interactionState === 'active') {
+        if (isOffScreen && widget.interactionState === 'active') {
           updateWidget(widget.id, { interactionState: 'sleeping' })
-        } else if (isVisible && widget.interactionState === 'sleeping') {
+        } else if (!isOffScreen && widget.interactionState === 'sleeping') {
           updateWidget(widget.id, { interactionState: 'active' })
         }
       })
     }
 
-    // Run check periodically
+    const unsubscribe = editor.store.listen(() => {
+      checkViewport()
+    }, { source: 'user', scope: 'document' })
+
+    // Also run check periodically since we disabled the one in the component
     const interval = setInterval(checkViewport, 1000)
-    return () => clearInterval(interval)
-  }, [editor, widgets, updateWidget])
+    
+    return () => {
+        unsubscribe()
+        clearInterval(interval)
+    }
+  }, [editor, updateWidget])
 
   // Listen for new widgets added from Zustand and create shapes for them
   useEffect(() => {
@@ -118,10 +130,50 @@ const CanvasContent = () => {
 
   return null
 }
-
 export const SpatialCanvas: React.FC = () => {
+  const { setOmnibarOpen, undo, redo, profiles, loadProfile, saveProfileAs, deleteProfile, currentProfileId } = useCanvasStore()
+  const [contextMenuOpen, setContextMenuOpen] = useState(false)
+  const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 })
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setContextMenuOpen(true)
+    setContextMenuPos({ x: e.clientX, y: e.clientY })
+  }
+
   return (
-    <div className="w-full h-full relative" style={{ background: 'transparent' }}>
+    <div className="w-full h-full relative" style={{ background: '#131315' }} onContextMenu={handleContextMenu} onClick={() => setContextMenuOpen(false)}>
+      <div 
+        className="absolute inset-0 pointer-events-none" 
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px',
+          backgroundPosition: '0 0'
+        }}
+      />
+      <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 1000, background: 'rgba(0,0,0,0.8)', padding: '10px', borderRadius: '8px', color: 'white', display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <select 
+             value={currentProfileId} 
+             onChange={(e) => loadProfile(e.target.value)}
+             style={{ background: 'black', color: 'white', border: '1px solid gray', borderRadius: '4px', padding: '4px' }}
+          >
+              {profiles.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+          </select>
+          <button onClick={() => {
+              const name = prompt('Enter profile name:')
+              if (name) saveProfileAs(name)
+          }} style={{ background: '#333', padding: '4px 8px', borderRadius: '4px' }}>Save As</button>
+          <button onClick={() => deleteProfile(currentProfileId)} disabled={currentProfileId === 'default'} style={{ background: '#533', padding: '4px 8px', borderRadius: '4px', opacity: currentProfileId === 'default' ? 0.5 : 1 }}>Delete</button>
+          
+          <div style={{ width: '1px', height: '20px', background: 'gray', margin: '0 5px' }}></div>
+          <button onClick={undo} style={{ background: '#333', padding: '4px 8px', borderRadius: '4px' }}>Undo</button>
+          <button onClick={redo} style={{ background: '#333', padding: '4px 8px', borderRadius: '4px' }}>Redo</button>
+      </div>
       <Tldraw 
         shapeUtils={customShapeUtils}
         components={{
@@ -142,6 +194,38 @@ export const SpatialCanvas: React.FC = () => {
       >
         <CanvasContent />
         <Omnibar />
+        <Minimap />
+        {contextMenuOpen && (
+            <div 
+              style={{
+                  position: 'fixed',
+                  top: contextMenuPos.y,
+                  left: contextMenuPos.x,
+                  background: '#222',
+                  border: '1px solid #444',
+                  boxShadow: '0 0 10px rgba(0,0,0,0.5)',
+                  padding: '5px',
+                  borderRadius: '5px',
+                  zIndex: 9999,
+                  color: 'white'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+                <button 
+                  onClick={() => {
+                      setContextMenuOpen(false)
+                      // Notify tldraw context from within the hook
+                      // A little dirty but we will pass the screen position to the store
+                      setOmnibarOpen(true, contextMenuPos)
+                  }}
+                  style={{ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', cursor: 'pointer', background: 'transparent', border: 'none', color: 'white' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#444'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                    Spawn Tab Here
+                </button>
+            </div>
+        )}
       </Tldraw>
     </div>
   )

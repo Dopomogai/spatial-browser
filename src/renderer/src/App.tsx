@@ -6,22 +6,6 @@ import { useCanvasStore } from './store/useCanvasStore'
 function App() {
   const { setOmnibarOpen, setSpacebarHeld, loadInitialState, addWidget, updateWidget } = useCanvasStore()
 
-  const handle100TabTest = () => {
-    for (let i = 0; i < 100; i++) {
-      // Scatter randomly across a 15000x15000 area
-      const x = Math.random() * 15000 - 7500
-      const y = Math.random() * 15000 - 7500
-      // We use diverse URLs to test memory usage across different sites if possible, or just example.com
-      const urls = [
-        'https://example.com',
-        'https://wikipedia.org',
-        'https://react.dev'
-      ]
-      const url = urls[Math.floor(Math.random() * urls.length)]
-      addWidget(url, x, y)
-    }
-  }
-
   useEffect(() => {
     loadInitialState()
   }, [])
@@ -72,29 +56,40 @@ function App() {
   return (
     <div className="w-screen h-screen relative overflow-hidden bg-background mac-drag-region flex flex-col">
       {/* Floating Header */}
-      <div className="absolute top-0 w-full h-12 z-40 bg-surface-container-low/80 backdrop-blur-2xl flex items-center px-6 pointer-events-auto border-b border-outline-variant/10">
-        <div className="flex gap-2 mr-6">
-          <div className="w-3 h-3 rounded-full bg-surface-container-highest"></div>
-          <div className="w-3 h-3 rounded-full bg-surface-container-highest"></div>
-          <div className="w-3 h-3 rounded-full bg-surface-container-highest"></div>
-        </div>
-        <span className="text-primary font-bold tracking-tight text-sm no-drag-region cursor-default">SpatialCommand</span>
+      <div className="absolute top-0 w-[50%] left-1/2 -translate-x-1/2 mt-4 h-12 z-40 bg-[#131315]/80 backdrop-blur-2xl flex items-center px-6 pointer-events-auto rounded-full border border-outline-variant/20 shadow-[0px_12px_32px_rgba(255,255,255,0.1)] no-drag-region justify-between">
         
-        {/* 100 Tab Test Button */}
-        <button 
-          onClick={handle100TabTest}
-          className="ml-6 px-3 py-1 bg-surface-container-highest text-primary text-xs font-semibold uppercase tracking-widest rounded-full border border-outline-variant/30 hover:bg-primary-container/20 transition-colors no-drag-region cursor-pointer"
-        >
-          100 Tab Test
-        </button>
+        {/* Left Side: Logo */}
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-[#aac7ff]"></div>
+          <span className="text-[#e4e2e4] font-bold tracking-tight text-sm cursor-default">SpatialCommand</span>
+        </div>
 
-        <div className="ml-auto text-xs text-on-surface-variant/60 uppercase tracking-widest font-semibold flex items-center gap-2">
-          <kbd className="px-1.5 py-0.5 bg-surface-container-highest rounded border border-outline-variant/20">⌘K</kbd> 
-          Command
+        {/* Center: Tab Links */}
+        <div className="flex gap-6 items-center text-sm font-medium text-[#c0c6d6]">
+          <button className="hover:text-[#aac7ff] transition-colors">Data Vis</button>
+          <button className="hover:text-[#aac7ff] transition-colors">API Docs</button>
+          <button className="hover:text-[#aac7ff] transition-colors">Team Comms</button>
+        </div>
+
+        {/* Right Side: Search & Settings */}
+        <div className="flex items-center gap-4">
+          {/* Mock Search Input */}
+          <div className="flex items-center gap-2 bg-[#2a2a2c] rounded-full px-3 py-1.5 border border-[#414754]/50 hover:border-[#aac7ff]/50 transition-colors cursor-pointer" onClick={() => setOmnibarOpen(true)}>
+            <span className="text-xs text-[#8b91a0]">Search...</span>
+            <kbd className="px-1.5 py-0.5 bg-[#353437] rounded text-[10px] text-[#c0c6d6]">⌘K</kbd>
+          </div>
+          
+          {/* Settings Icon */}
+          <button className="text-[#c0c6d6] hover:text-[#aac7ff] transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinelinejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
         </div>
       </div>
 
-      <div className="flex-1 w-full relative mt-12 no-drag-region">
+      <div className="flex-1 w-full relative no-drag-region">
         <SpatialCanvas />
       </div>
       

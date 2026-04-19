@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
-import { Globe, X, Moon, Maximize2 } from 'lucide-react'
+import { Globe, X, Maximize2 } from 'lucide-react'
 import { useEditor } from 'tldraw'
 
 // Helper to validate base64 strings so React avoids passing garbage to <img> tags
@@ -16,15 +16,75 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
   const editor = useEditor()
   const isHoldingSpace = isSpacebarHeld
 
-  // Capture screenshot before sleeping
+  // Listen for navigation events to update URL
+  useEffect(() => {
+    if (!webviewRef.current) return
+    const webview = webviewRef.current
+
+    const handleDidNavigate = (e: any) => {
+      if (e.url !== widget.url) {
+        updateWidget(widget.id, { url: e.url })
+      }
+    }
+    
+    const handleDidNavigateInPage = (e: any) => {
+      // For hash changes and history.pushState
+      if (e.url !== widget.url && e.isMainFrame) {
+        updateWidget(widget.id, { url: e.url })
+      }
+    }
+
+    const handlePageTitleUpdated = (e: any) => {
+      if (e.title !== widget.title) {
+        updateWidget(widget.id, { title: e.title })
+      }
+    }
+
+    webview.addEventListener('did-navigate', handleDidNavigate)
+    webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage)
+    webview.addEventListener('page-title-updated', handlePageTitleUpdated)
+
+    return () => {
+      webview.removeEventListener('did-navigate', handleDidNavigate)
+      webview.removeEventListener('did-navigate-in-page', handleDidNavigateInPage)
+      webview.removeEventListener('page-title-updated', handlePageTitleUpdated)
+    }
+  }, [widget?.id, widget?.url, widget?.title, updateWidget])
+
+  // Capture screenshot when moving to non-active state
+  useEffect(() => {
+    if (!widget) return
+    
+    // Check if transition is from active to sleeping/minimized
+    if (widget.interactionState !== 'active' && webviewRef.current) {
+      try {
+        if (webviewRef.current && webviewRef.current.capturePage) {
+          webviewRef.current.capturePage().then((image: any) => {
+            const dataUrl = image.toDataURL();
+            if (isValidDataUrl(dataUrl)) {
+              updateWidget(widget.id, { screenshotBase64: dataUrl });
+            }
+          }).catch((err: any) => console.error('Failed to capture on sleep', err))
+        }
+      } catch (e) {
+          console.error(e)
+      }
+    }
+
+  }, [widget?.interactionState, widget?.id, updateWidget, widget?.screenshotBase64])
+
+  // Also capture screenshot periodically while active
   useEffect(() => {
     if (!widget) return
     if (widget.interactionState === 'active' && webviewRef.current) {
       const captureInterval = setInterval(async () => {
         try {
-          if (webviewRef.current.capturePage) {
-            // DO NOT process page captures, Chromium forbids it currently
-            return;
+          if (webviewRef.current && webviewRef.current.capturePage) {
+            const image = await webviewRef.current.capturePage();
+            const dataUrl = image.toDataURL();
+            if (isValidDataUrl(dataUrl)) {
+              updateWidget(widget.id, { screenshotBase64: dataUrl });
+            }
           }
         } catch (e) {
           console.error('Failed to capture page', e)
@@ -33,42 +93,23 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       return () => clearInterval(captureInterval)
     }
     return () => {}
-  }, [widget?.interactionState, widget?.id, updateWidget])
+  }, [widget?.interactionState, widget?.id, updateWidget, widget?.screenshotBase64])
 
-  // Sleeping state intersection logic
+  // Sleeping state intersection logic is removed from here to prevent fighting with SpatialCanvas
+
+  // When waking from sleep, URL might not be properly populated when restoring, so update webview
   useEffect(() => {
-    if (!widget) return
-    if (widget.interactionState === 'minimized') return
-
-    const checkIntersection = () => {
-      const bounds = editor.getViewportPageBounds()
-      const shapeBounds = editor.getShapePageBounds(shape.id)
-      if (!shapeBounds) return
-
-      // 500px Buffer Zone
-      const buffer = 500
-      const isOffScreen = 
-        shapeBounds.maxX < bounds.minX - buffer ||
-        shapeBounds.minX > bounds.maxX + buffer ||
-        shapeBounds.maxY < bounds.minY - buffer ||
-        shapeBounds.minY > bounds.maxY + buffer
-      // Automatic sleeping tab logic
-      if (isOffScreen && widget.interactionState === 'active') {
-        updateWidget(widget.id, { interactionState: 'sleeping' })
-      } else if (!isOffScreen && widget.interactionState === 'sleeping') {
-        updateWidget(widget.id, { interactionState: 'active' })
+    if (widget?.interactionState === 'active' && webviewRef.current) {
+      if (webviewRef.current.getURL) {
+        // Only load if the current webview URL does not match actual expected widget URL
+        const currentWebviewUrl = webviewRef.current.getURL();
+        if (currentWebviewUrl && currentWebviewUrl !== widget.url && currentWebviewUrl !== '') {
+            webviewRef.current.loadURL(widget.url);
+        }
       }
-      
     }
-
-    // Checking on camera change
-    const unsubscribe = editor.store.listen(() => {
-      checkIntersection()
-    })
-    
-    return () => unsubscribe()
-  }, [editor, widget?.interactionState, shape.id, updateWidget, widget?.id])
-
+  }, [widget?.interactionState, widget?.url])
+  
   if (!widget) return null
 
   // Stop pointer events reaching TLDraw when interacting with the widget
@@ -105,27 +146,38 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
   // SLEEPING STATE
   if (widget.interactionState === 'sleeping') {
     return (
-      <div className="w-full h-full bg-surface-container-high rounded-2xl shadow-xl border border-outline-variant/30 flex flex-col overflow-hidden relative no-drag-region cursor-pointer group">
-        <div className="h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4">
+      <div className="w-full h-full bg-[#131315] rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.5)] border border-outline-variant/30 flex flex-col overflow-hidden relative no-drag-region cursor-pointer group">
+        <div className="h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4 z-10">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-surface-container-highest"></div>
             <div className="w-3 h-3 rounded-full bg-surface-container-highest"></div>
             <div className="w-3 h-3 rounded-full bg-surface-container-highest"></div>
           </div>
-          <div className="flex-1 mx-8 flex justify-center opacity-50">
-            <div className="bg-surface-container-high px-4 py-1.5 rounded-full text-xs font-mono text-on-surface-variant flex items-center gap-2 max-w-sm truncate">
-              <Moon size={12} />
-              <span className="truncate">{widget.title || widget.url}</span>
+          <div className="flex-1 mx-8 flex justify-center text-on-surface-variant/50 group-hover:text-on-surface-variant transition-colors">
+            <div className="bg-surface-container-highest/60 px-4 py-1.5 rounded-full text-xs font-mono border border-outline-variant/20 flex items-center gap-2 max-w-sm w-full truncate">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ffb868] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ffb868]"></span>
+              </span>
+              <span className="truncate ml-1">{widget.url}</span>
             </div>
           </div>
+          <div className="w-14"></div> {/* Spacer to balance flex-1 */}
         </div>
-        <div className="flex-1 w-full bg-surface-container flex items-center justify-center relative overflow-hidden">
-          <div className="text-on-surface-variant/30 font-semibold uppercase tracking-widest text-sm flex items-center gap-2">
-            <Moon size={16} /> Sleeping
-          </div>
+        <div className="flex-1 w-full bg-black relative flex items-center justify-center overflow-hidden">
+          {widget.screenshotBase64 ? (
+            <img src={widget.screenshotBase64} alt="site screenshot" className="absolute inset-0 w-full h-full object-cover opacity-50 grayscale-[20%]" />
+          ) : (
+            <div className="relative flex items-center justify-center flex-col gap-3 opacity-30">
+               <span className="relative flex h-6 w-6 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ffb868] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-6 w-6 bg-[#ffb868]"></span>
+                </span>
+            </div>
+          )}
           {/* Overlay to wake up */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="bg-primary px-4 py-2 rounded-full text-on-primary font-bold shadow-lg pointer-events-auto hover:bg-primary/90 flex items-center gap-2"
+          <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm">
+            <div className="bg-[#aac7ff] text-[#131315] px-6 py-2.5 rounded-full font-bold shadow-lg pointer-events-auto hover:bg-[#aac7ff]/90 flex items-center gap-2 transition-transform hover:scale-105"
                  onClick={() => updateWidget(widget.id, { interactionState: 'active' })}>
               <Globe size={16} /> Wake Tab
             </div>
