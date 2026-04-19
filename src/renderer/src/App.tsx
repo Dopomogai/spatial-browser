@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { SpatialCanvas } from './components/canvas/SpatialCanvas'
-import { Omnibar } from './components/ui/Omnibar'
+// Omnibar
 import { useCanvasStore } from './store/useCanvasStore'
 
 function App() {
@@ -8,9 +8,7 @@ function App() {
 
   useEffect(() => {
     loadInitialState()
-  }, [])
 
-  useEffect(() => {
     // Listen for Cmd+K and Spacebar
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -51,7 +49,7 @@ function App() {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [setOmnibarOpen, setSpacebarHeld])
+  }, [setOmnibarOpen, setSpacebarHeld, addWidget, updateWidget, loadInitialState])
 
   return (
     <div className="w-screen h-screen relative overflow-hidden bg-background mac-drag-region flex flex-col">

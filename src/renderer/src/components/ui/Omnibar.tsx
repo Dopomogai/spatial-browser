@@ -12,8 +12,10 @@ export const Omnibar: React.FC = () => {
   const editor = useEditor()
 
   useEffect(() => {
-    if (isOmnibarOpen && inputRef.current) {
-        inputRef.current.focus()
+    if (isOmnibarOpen) {
+       setTimeout(() => {
+          inputRef.current?.focus()
+       }, 50)
     } else {
         setUrl('')
     }

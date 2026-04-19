@@ -49,8 +49,8 @@ export const Minimap: React.FC = () => {
   const minimapWidth = 200;
   const minimapHeight = 150;
 
-  let scaleX = minimapWidth / totalWidth;
-  let scaleY = minimapHeight / totalHeight;
+  const scaleX = minimapWidth / totalWidth;
+  const scaleY = minimapHeight / totalHeight;
   let scale = Math.min(scaleX, scaleY);
   
   if (scale === Infinity || isNaN(scale)) scale = 1;
