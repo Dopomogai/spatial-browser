@@ -3,6 +3,7 @@ import { Tldraw, useEditor, createShapeId } from 'tldraw'
 import 'tldraw/tldraw.css'
 import { BrowserWidgetShapeUtil } from '../shapes/BrowserWidget/BrowserWidgetShapeUtil'
 import { useCanvasStore } from '../../store/useCanvasStore'
+import { Omnibar } from '../ui/Omnibar'
 
 const customShapeUtils = [BrowserWidgetShapeUtil]
 
@@ -144,6 +145,7 @@ export const SpatialCanvas: React.FC = () => {
         }}
       >
         <CanvasContent />
+        <Omnibar />
       </Tldraw>
     </div>
   )

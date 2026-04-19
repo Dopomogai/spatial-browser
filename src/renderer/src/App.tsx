@@ -98,7 +98,7 @@ function App() {
         <SpatialCanvas />
       </div>
       
-      <Omnibar />
+      
     </div>
   )
 }
