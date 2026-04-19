@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
-import { SpatialCanvas } from './components/canvas/SpatialCanvas'
+import { SpatialCanvas } from "./components/canvas/SpatialCanvas"
+import { TopTabBar } from "./components/TopTabBar"
 // Omnibar
 import { useCanvasStore } from './store/useCanvasStore'
 
@@ -89,6 +90,7 @@ function App() {
       </div>
 
       <div className="flex-1 w-full relative no-drag-region">
+        <TopTabBar />
         <SpatialCanvas />
       </div>
       
