@@ -189,21 +189,31 @@ export const SpatialCanvas: React.FC = () => {
         <Omnibar />
         <Minimap />
                 {contextMenuOpen && (
-            <div 
+              <div className="bg-surface_container_highest/90 backdrop-blur-xl border border-white/5 shadow-[0_12px_32px_rgba(0,0,0,0.5)] rounded-xl py-1 w-48 animate-in fade-in zoom-in duration-100"
               style={{
-                  position: 'fixed',
+                  position: 'absolute',
                   top: contextMenuPos.y,
                   left: contextMenuPos.x,
                   zIndex: 9999,
               }}
-              className="bg-surface_container_highest/90 backdrop-blur-xl border border-white/5 shadow-[0_12px_32px_rgba(0,0,0,0.5)] rounded-xl py-1 w-48 animate-in fade-in zoom-in duration-100"
               onClick={(e) => e.stopPropagation()}
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
             >
                 <button 
                   onClick={() => {
                       setContextMenuOpen(false)
-                      useCanvasStore.getState().setOmnibarOpen(true, contextMenuPos)
+                      
+                      // Convert fixed screen coordinates to actual physical infinite-canvas coordinates
+                      const editor = useCanvasStore.getState().editor;
+                      if (!editor) {
+                          useCanvasStore.getState().setOmnibarOpen(true, contextMenuPos)
+                          return;
+                      }
+
+                      const point = editor.windowToScreen({ x: contextMenuPos.x, y: contextMenuPos.y })
+                      const canvasPoint = editor.screenToPage(point)
+                      
+                      useCanvasStore.getState().setOmnibarOpen(true, { x: canvasPoint.x, y: canvasPoint.y })
                   }}
                   className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex items-center gap-2"
                 >
@@ -214,10 +224,15 @@ export const SpatialCanvas: React.FC = () => {
                   onClick={() => {
                       setContextMenuOpen(false)
                       useCanvasStore.getState().setSpacebarHeld(false)
+                      
+                      const editor = useCanvasStore.getState().editor;
+                      if (editor) {
+                          editor.zoomToFit()
+                      }
                   }}
                   className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex items-center gap-2"
                 >
-                    <MousePointer2 size={14} /> Reset View
+                    <MousePointer2 size={14} /> Center View
                 </button>
             </div>
         )}
