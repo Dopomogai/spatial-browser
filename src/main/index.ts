@@ -5,6 +5,8 @@ import { WebSocketServer } from 'ws'
 
 // AI Setup: remote debugging for DOM scraping
 app.commandLine.appendSwitch('remote-debugging-port', '9222')
+app.commandLine.appendSwitch('no-sandbox')
+app.commandLine.appendSwitch('disable-gpu')
 
 let mainWindow: BrowserWindow | null = null
 
@@ -43,6 +45,7 @@ function createWindow(): void {
     titleBarStyle: 'hiddenInset', // Mac-native UX
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
+      // Bypass sandbox for root execution in agent dev environment
       sandbox: false,
       webviewTag: true,
       webSecurity: false,
