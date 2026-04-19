@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
-import { Globe, X, Minus, Moon, Maximize2 } from 'lucide-react'
+import { Globe, X, Moon, Maximize2 } from 'lucide-react'
 import { useEditor } from 'tldraw'
 
 export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
@@ -18,8 +18,12 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
         try {
           if (webviewRef.current.capturePage) {
             const image = await webviewRef.current.capturePage()
-            const res = await fetch(image.toDataURL())
+            if (!image || (image.isEmpty && image.isEmpty())) return
+            const dataUrl = image.toDataURL()
+            if (!dataUrl || dataUrl === 'data:image/png;base64,') return
+            const res = await fetch(dataUrl)
             const blob = await res.blob()
+            if (blob.size === 0) return
             updateWidget(widget.id, { screenshotBase64: URL.createObjectURL(blob) })
           }
         } catch (e) {
@@ -54,23 +58,16 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
         if (webviewRef.current?.capturePage) {
           try {
             webviewRef.current.capturePage().then(async (image: any) => {
-              if (image && !image.isEmpty()) {
-                const dataUrl = image.toDataURL()
-                if (dataUrl && dataUrl.startsWith('data:image/')) {
-                   const res = await fetch(dataUrl)
-                   const blob = await res.blob()
-                   updateWidget(widget.id, { 
-                     interactionState: 'sleeping',
-                     screenshotBase64: URL.createObjectURL(blob)
-                   })
-                } else {
-                  console.warn('capturePage returned invalid data URL')
-                  updateWidget(widget.id, { interactionState: 'sleeping' })
-                }
-              } else {
-                 console.warn('capturePage returned empty image')
-                 updateWidget(widget.id, { interactionState: 'sleeping' })
-              }
+              if (!image || (image.isEmpty && image.isEmpty())) throw new Error('Empty image')
+              const dataUrl = image.toDataURL()
+              if (!dataUrl || dataUrl === 'data:image/png;base64,') throw new Error('Empty image')
+              const res = await fetch(dataUrl)
+              const blob = await res.blob()
+              if (blob.size === 0) throw new Error('Empty image')
+              updateWidget(widget.id, { 
+                interactionState: 'sleeping',
+                screenshotBase64: URL.createObjectURL(blob)
+              })
             }).catch((err: any) => {
                console.warn('capturePage error:', err)
                updateWidget(widget.id, { interactionState: 'sleeping' })
