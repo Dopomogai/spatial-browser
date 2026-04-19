@@ -174,7 +174,6 @@ export const SpatialCanvas: React.FC = () => {
           PageMenu: null,
           NavigationPanel: null,
           ContextMenu: null,
-          Minimap: null,
           StylePanel: null,
           ZoomMenu: null,
           HelperButtons: null,
