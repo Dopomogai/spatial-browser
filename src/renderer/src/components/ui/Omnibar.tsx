@@ -38,8 +38,15 @@ export const Omnibar: React.FC = () => {
     if (!url.trim()) return
 
     let finalUrl = url.trim()
-    if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
-      finalUrl = `https://${finalUrl}`
+    const domainRegex = /^((https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}|localhost):\d*/;
+    
+    if (domainRegex.test(finalUrl)) {
+      if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+        finalUrl = `https://${finalUrl}`
+      }
+    } else {
+        // Fallback to Google Search
+        finalUrl = `https://www.google.com/search?q=${encodeURIComponent(finalUrl)}`
     }
 
     let centerX = 0

@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
-import { Globe, X, Maximize2 } from 'lucide-react'
+import { Globe, X, Maximize2, ChevronLeft, ChevronRight, History } from 'lucide-react'
 import { useEditor } from 'tldraw'
 
 // Helper to validate base64 strings so React avoids passing garbage to <img> tags
@@ -15,11 +15,31 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
   const webviewRef = useRef<any>(null)
   const editor = useEditor()
   const isHoldingSpace = isSpacebarHeld
+  const [isReady, setIsReady] = useState(false)
+  const [isShiftHeld, setIsShiftHeld] = useState(false)
+  const [canGoBack, setCanGoBack] = useState(false)
+  const [canGoForward, setCanGoForward] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+
+
+  useEffect(() => {
+    const handleShiftChange = (e: any) => setIsShiftHeld(e.detail.held)
+    // Need to strictly cast to any to bypass TS event mapping constraints
+    window.addEventListener('shift-state-change' as any, handleShiftChange)
+    return () => {
+      window.removeEventListener('shift-state-change' as any, handleShiftChange)
+    }
+  }, [])
+
 
   // Listen for navigation events to update URL
   useEffect(() => {
     if (!webviewRef.current) return
     const webview = webviewRef.current
+
+    const handleDomReady = () => {
+      setIsReady(true)
+    }
 
     const handleDidNavigate = (e: any) => {
       if (e.url !== widget.url) {
@@ -43,11 +63,13 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
     webview.addEventListener('did-navigate', handleDidNavigate)
     webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage)
     webview.addEventListener('page-title-updated', handlePageTitleUpdated)
+    webview.addEventListener('dom-ready', handleDomReady)
 
     return () => {
       webview.removeEventListener('did-navigate', handleDidNavigate)
       webview.removeEventListener('did-navigate-in-page', handleDidNavigateInPage)
       webview.removeEventListener('page-title-updated', handlePageTitleUpdated)
+      webview.removeEventListener('dom-ready', handleDomReady)
     }
   }, [widget?.id, widget?.url, widget?.title, updateWidget])
 
@@ -56,7 +78,7 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
     if (!widget) return
     
     // Check if transition is from active to sleeping/minimized
-    if (widget.interactionState !== 'active' && webviewRef.current) {
+    if (widget.interactionState !== 'active' && webviewRef.current && isReady) {
       try {
         if (webviewRef.current && webviewRef.current.capturePage) {
           webviewRef.current.capturePage().then((image: any) => {
@@ -71,12 +93,12 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       }
     }
 
-  }, [widget?.interactionState, widget?.id, updateWidget, widget?.screenshotBase64])
+  }, [widget?.interactionState, widget?.id, updateWidget, widget?.screenshotBase64, isReady])
 
   // Also capture screenshot periodically while active
   useEffect(() => {
     if (!widget) return
-    if (widget.interactionState === 'active' && webviewRef.current) {
+    if (widget.interactionState === 'active' && webviewRef.current && isReady) {
       const captureInterval = setInterval(async () => {
         try {
           if (webviewRef.current && webviewRef.current.capturePage) {
@@ -93,13 +115,13 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       return () => clearInterval(captureInterval)
     }
     return () => {}
-  }, [widget?.interactionState, widget?.id, updateWidget, widget?.screenshotBase64])
+  }, [widget?.interactionState, widget?.id, updateWidget, widget?.screenshotBase64, isReady])
 
   // Sleeping state intersection logic is removed from here to prevent fighting with SpatialCanvas
 
   // When waking from sleep, URL might not be properly populated when restoring, so update webview
   useEffect(() => {
-    if (widget?.interactionState === 'active' && webviewRef.current) {
+    if (widget?.interactionState === 'active' && webviewRef.current && isReady) {
       if (webviewRef.current.getURL) {
         // Only load if the current webview URL does not match actual expected widget URL
         const currentWebviewUrl = webviewRef.current.getURL();
@@ -108,8 +130,8 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
         }
       }
     }
-  }, [widget?.interactionState, widget?.url])
-  
+  }, [widget?.interactionState, widget?.url, isReady])
+
   if (!widget) return null
 
   // Stop pointer events reaching TLDraw when interacting with the widget
