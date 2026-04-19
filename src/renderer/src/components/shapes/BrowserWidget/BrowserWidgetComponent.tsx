@@ -278,13 +278,13 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       <div className="flex-1 w-full bg-white relative mt-12">
         {/* Pan Hack Overlay */}
         <div 
-          className={`absolute inset-0 z-10 ${isSpacebarHeld ? 'pointer-events-auto' : 'pointer-events-none'}`}
+          className={`absolute inset-0 z-10 ${isSpacebarHeld || isShiftHeld ? 'pointer-events-auto' : 'pointer-events-none'}`}
         />
         
         <webview
           ref={webviewRef}
           src={widget.url}
-          className="w-full h-full border-none"
+          className={`w-full h-full border-none ${isSpacebarHeld || isShiftHeld ? 'pointer-events-none' : 'pointer-events-auto'}`}
           partition="persist:main"
           preload={`file://${(window as any).api?.getPreloadPath?.() || '../preload/index.js'}`}
         />
