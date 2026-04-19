@@ -8,11 +8,11 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
   const widget = widgets[shape.props.widgetId]
   const webviewRef = useRef<any>(null)
   const editor = useEditor()
-
-  if (!widget) return null
+  const isHoldingSpace = isSpacebarHeld
 
   // Capture screenshot before sleeping
   useEffect(() => {
+    if (!widget) return
     if (widget.interactionState === 'active' && webviewRef.current) {
       const captureInterval = setInterval(async () => {
         try {
@@ -29,10 +29,11 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       return () => clearInterval(captureInterval)
     }
     return () => {}
-  }, [widget.interactionState, widget.id])
+  }, [widget?.interactionState, widget?.id, updateWidget])
 
   // Sleeping state intersection logic
   useEffect(() => {
+    if (!widget) return
     if (widget.interactionState === 'minimized') return
 
     const checkIntersection = () => {
@@ -47,26 +48,44 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
         shapeBounds.minX > bounds.maxX + buffer ||
         shapeBounds.maxY < bounds.minY - buffer ||
         shapeBounds.minY > bounds.maxY + buffer
-
+      // Automatic sleeping tab logic
       if (isOffScreen && widget.interactionState === 'active') {
         // Try capture before sleep
         if (webviewRef.current?.capturePage) {
-          webviewRef.current.capturePage().then(async (image: any) => {
-            const res = await fetch(image.toDataURL())
-            const blob = await res.blob()
-            updateWidget(widget.id, { 
-              interactionState: 'sleeping',
-              screenshotBase64: URL.createObjectURL(blob)
+          try {
+            webviewRef.current.capturePage().then(async (image: any) => {
+              if (image && !image.isEmpty()) {
+                const dataUrl = image.toDataURL()
+                if (dataUrl && dataUrl.startsWith('data:image/')) {
+                   const res = await fetch(dataUrl)
+                   const blob = await res.blob()
+                   updateWidget(widget.id, { 
+                     interactionState: 'sleeping',
+                     screenshotBase64: URL.createObjectURL(blob)
+                   })
+                } else {
+                  console.warn('capturePage returned invalid data URL')
+                  updateWidget(widget.id, { interactionState: 'sleeping' })
+                }
+              } else {
+                 console.warn('capturePage returned empty image')
+                 updateWidget(widget.id, { interactionState: 'sleeping' })
+              }
+            }).catch((err: any) => {
+               console.warn('capturePage error:', err)
+               updateWidget(widget.id, { interactionState: 'sleeping' })
             })
-          }).catch(() => {
-            updateWidget(widget.id, { interactionState: 'sleeping' })
-          })
+          } catch (e) {
+             console.error('Failed to trigger capturePage:', e)
+             updateWidget(widget.id, { interactionState: 'sleeping' })
+          }
         } else {
-          updateWidget(widget.id, { interactionState: 'sleeping' })
+           updateWidget(widget.id, { interactionState: 'sleeping' })
         }
       } else if (!isOffScreen && widget.interactionState === 'sleeping') {
         updateWidget(widget.id, { interactionState: 'active' })
       }
+      
     }
 
     // Checking on camera change
@@ -75,7 +94,9 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
     })
     
     return () => unsubscribe()
-  }, [editor, widget.interactionState, shape.id])
+  }, [editor, widget?.interactionState, shape.id, updateWidget, widget?.id])
+
+  if (!widget) return null
 
   // Stop pointer events reaching TLDraw when interacting with the widget
   const handlePointerDown = (e: React.PointerEvent) => {
