@@ -1,3 +1,4 @@
+import { supabase } from '../lib/supabase'
 import { create } from 'zustand'
 import { set, get } from 'idb-keyval'
 
@@ -265,6 +266,23 @@ function persistState(state: Partial<CanvasStore>) {
         isSpacebarHeld: false
     }
 
+
+    // Local persistence
     set('spatial-canvas-state', stateToSave).catch(console.error)
+    
+    // Remote cloud persistence
+    if (state.currentProfileId && supabase) {
+        supabase
+          .from('spatial_workspaces')
+          .upsert({ 
+              id: state.currentProfileId, 
+              name: profilesToSave.find(p => p.id === state.currentProfileId)?.name || 'Default',
+              state_json: stateToSave,
+              updated_at: new Date().toISOString()
+          })
+          .then(({ error }) => {
+              if (error) console.warn('Supabase sync failed (likely missing keys):', error.message)
+          })
+    }
   }, 1000)
 }

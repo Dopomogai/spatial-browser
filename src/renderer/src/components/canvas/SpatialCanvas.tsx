@@ -177,34 +177,36 @@ export const SpatialCanvas: React.FC = () => {
         <CanvasContent />
         <Omnibar />
         <Minimap />
-        {contextMenuOpen && (
+                {contextMenuOpen && (
             <div 
               style={{
                   position: 'fixed',
                   top: contextMenuPos.y,
                   left: contextMenuPos.x,
-                  background: '#222',
-                  border: '1px solid #444',
-                  boxShadow: '0 0 10px rgba(0,0,0,0.5)',
-                  padding: '5px',
-                  borderRadius: '5px',
                   zIndex: 9999,
-                  color: 'white'
               }}
+              className="bg-surface_container_highest/90 backdrop-blur-xl border border-white/5 shadow-[0_12px_32px_rgba(0,0,0,0.5)] rounded-xl py-1 w-48 animate-in fade-in zoom-in duration-100"
               onClick={(e) => e.stopPropagation()}
+              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
             >
                 <button 
                   onClick={() => {
                       setContextMenuOpen(false)
-                      // Notify tldraw context from within the hook
-                      // A little dirty but we will pass the screen position to the store
-                      setOmnibarOpen(true, contextMenuPos)
+                      useCanvasStore.getState().setOmnibarOpen(true, contextMenuPos)
                   }}
-                  style={{ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', cursor: 'pointer', background: 'transparent', border: 'none', color: 'white' }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#444'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex items-center gap-2"
                 >
-                    Spawn Tab Here
+                    <Plus size={14} /> Spawn Tab Here
+                </button>
+                <div className="w-full h-px bg-white/5 my-1"></div>
+                <button 
+                  onClick={() => {
+                      setContextMenuOpen(false)
+                      useCanvasStore.getState().setSpacebarHeld(false)
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex items-center gap-2"
+                >
+                    <MousePointer2 size={14} /> Reset View
                 </button>
             </div>
         )}
