@@ -70,7 +70,7 @@ function App() {
   }, [setOmnibarOpen, setSpacebarHeld])
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-background mac-drag-region">
+    <div className="w-screen h-screen relative overflow-hidden bg-background mac-drag-region flex flex-col">
       {/* Floating Header */}
       <div className="absolute top-0 w-full h-12 z-40 bg-surface-container-low/80 backdrop-blur-2xl flex items-center px-6 pointer-events-auto border-b border-outline-variant/10">
         <div className="flex gap-2 mr-6">
@@ -94,7 +94,7 @@ function App() {
         </div>
       </div>
 
-      <div className="w-full h-full pt-12 no-drag-region">
+      <div className="flex-1 w-full relative mt-12 no-drag-region">
         <SpatialCanvas />
       </div>
       
