@@ -264,14 +264,24 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
           <button className="w-3 h-3 rounded-full bg-[#34c759] hover:opacity-80"></button>
         </div>
         
-        <div className="flex-1 mx-8 flex justify-center">
-          <div className="bg-surface-container-high px-4 py-1.5 rounded-full text-xs font-mono text-on-surface-variant/80 border border-outline-variant/20 flex items-center gap-2 max-w-sm w-full truncate">
-            <Globe size={12} />
+        {/* Back and Forward Controls */}
+        <div className="flex gap-2 ml-4 text-on-surface-variant flex-shrink-0 border-l border-white/5 pl-4">
+          <button onClick={() => { if(canGoBack) webviewRef.current?.goBack() }} disabled={!canGoBack} className={`hover:text-white transition-colors p-1 rounded hover:bg-white/10 ${!canGoBack && 'opacity-30 cursor-not-allowed'}`}>
+            <ChevronLeft size={16} />
+          </button>
+          <button onClick={() => { if(canGoForward) webviewRef.current?.goForward() }} disabled={!canGoForward} className={`hover:text-white transition-colors p-1 rounded hover:bg-white/10 ${!canGoForward && 'opacity-30 cursor-not-allowed'}`}>
+            <ChevronRight size={16} />
+          </button>
+        </div>
+
+        <div className="flex-1 mx-6 flex justify-center">
+          <div className="bg-surface-container-high px-4 py-1.5 rounded-full text-xs font-mono text-on-surface-variant/80 border border-outline-variant/20 flex items-center gap-2 max-w-sm w-full truncate shadow-inner">
+            <Globe size={12} className="opacity-50" />
             <span className="truncate">{widget.url}</span>
           </div>
         </div>
 
-        <div className="w-14"></div> {/* Spacer */}
+        <div className="w-20"></div> {/* Spacer */}
       </div>
 
       {/* Webview Area */}
