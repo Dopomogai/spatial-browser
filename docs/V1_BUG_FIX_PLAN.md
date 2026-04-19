@@ -4,35 +4,18 @@ Based on the manual testing pass for "V1 proper", we have established the follow
 
 ~~## 1. Sleeping Logic Consistency~~ (COMPLETED)
 ~~## 3. Chrome-like Tab Bar & Grouping~~ (COMPLETED)
+~~## 4. Enhanced Tab Spawning (Right Click)~~ (COMPLETED)
 ~~## 5. UI/UX: Grid, Minimap, and Resizing Grips~~ (COMPLETED)
+~~## 6. The "Pan Hack" & Keyboard Traps~~ (COMPLETED)
+~~## 7. Electron IPC & Webview Hardening~~ (COMPLETED)
 
 ---
-
-## 4. Enhanced Tab Spawning (Right Click)
-**The Issue:** The current right-click `Spawn Tab Here` drops the tab at raw physical screen coordinates, which breaks if the user is panned far away or zoomed out. 
-**The Fix:**
-- When the `Spawn Tab Here` button is clicked in `SpatialCanvas.tsx`, we must take `contextMenuPos.x/y`, run it through `editor.screenToPage(x, y)`, and pass those exact converted coordinates to `useCanvasStore.getState().addWidget({ x: page.x, y: page.y })`.
-
-## 6. The "Pan Hack" & Keyboard Traps
-**The Issue:** `<webview>` elements intercept all mouse and keyboard events. If a user is looking at a heavy web app, they cannot pan the infinite canvas, and keyboard shortcuts (like `Cmd+K` or `Cmd+Shift+B`) are swallowed by the webpage.
-**The Fix:**
-- In `BrowserWidgetComponent.tsx`, implement an event listener for the `Shift` key.
-- When `Shift` is held down, inject `pointer-events: none` directly onto the `<webview>` container. This allows the user's mouse and keyboard commands to "fall through" the browser tab and hit the TLDraw canvas underneath, allowing seamless panning and shortcut execution.
-
-## 7. Electron IPC & Webview Hardening
-**The Issue:** Opening random URLs inside `<webview>` tags without proper sandbox hardening is a major security risk, and external clicks (like `target="_blank"`) currently do nothing or crash the app.
-**The Fix:**
-- In `main/index.ts`, intercept the `will-attach-webview` and `will-navigate` events.
-- Force `contextIsolation: true` and block node integration.
-- If a webview tries to open a new window (`window.open`), intercept it and route it back to our React store via an IPC message so we spawn a new Spatial Tab instead of an external Chrome window. 
 
 ## 8. Tab Navigation Persistence (canGoBack)
 **The Issue:** When a tab goes to sleep and wakes back up, its `webview` is destroyed and recreated, resetting the page state and losing the Back/Forward history.
 **The Fix:**
-- The `<BrowserWidgetComponent>` needs native `<button>` controls for Back/Forward.
-- We must manually query `webview.canGoBack()` on every URL change and store this state locally.
-
----
+- The `<BrowserWidgetComponent>` natively controls Back/Forward locally inside the React state (`canGoBack`, `canGoForward`). 
+- When the `webview` fires `did-navigate`, we must persist the current active URL into the `spatial_widgets` store so we wake up on the *last navigated URL*, not the original base URL. (Note: True chromium history stack serialization `savePage()` over IPC is too heavy for V1 and will be addressed in V2 state blobs).
 
 # V2 - V5: The Definitive Roadmap
 
