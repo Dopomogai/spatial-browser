@@ -16,6 +16,31 @@ function setupWebSocketServer() {
   const wss = new WebSocketServer({ port })
   console.log(`WebSocket Server running on ws://localhost:${port}`)
 
+  // Hardened WebView isolation
+  app.on('web-contents-created', (event, contents) => {
+    if (contents.getType() === 'webview') {
+      
+      // Stop new windows from spawning as electron shells
+      contents.setWindowOpenHandler(({ url }) => {
+        if (mainWindow) {
+           // Send event to React store to spawn a natively styled Spatial Tab
+           mainWindow.webContents.send('spawn-tab-from-link', url)
+        }
+        return { action: 'deny' }
+      })
+
+      // Intercept and prevent sandbox escapes/navigation to weird local protocols
+      contents.on('will-navigate', (event, navigationUrl) => {
+        const parsedUrl = new URL(navigationUrl)
+        if (parsedUrl.protocol === 'file:') {
+          event.preventDefault()
+          console.warn('Blocked file:// protocol navigation in webview')
+        }
+      })
+      
+    }
+  })
+
   wss.on('connection', (ws) => {
     console.log('AI Backend Connected')
     
