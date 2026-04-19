@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Tldraw, useEditor, createShapeId } from 'tldraw'
+import { Tldraw, useEditor, createShapeId, DefaultCanvas } from 'tldraw'
 import 'tldraw/tldraw.css'
 import { BrowserWidgetShapeUtil } from '../shapes/BrowserWidget/BrowserWidgetShapeUtil'
 import { useCanvasStore } from '../../store/useCanvasStore'
@@ -123,6 +123,7 @@ export const SpatialCanvas: React.FC = () => {
   return (
     <div className="w-full h-full relative" style={{ background: 'transparent' }}>
       <Tldraw
+        assetUrls={{ translations: 'https://cdn.tldraw.com/translations/', icons: 'https://cdn.tldraw.com/icons/', fonts: 'https://cdn.tldraw.com/fonts/' }}
         shapeUtils={customShapeUtils}
         components={{
           Toolbar: null,
