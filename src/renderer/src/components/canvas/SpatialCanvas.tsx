@@ -122,28 +122,23 @@ const CanvasContent = () => {
 export const SpatialCanvas: React.FC = () => {
   return (
     <div className="w-full h-full relative" style={{ background: 'transparent' }}>
-      <Tldraw
-        assetUrls={{ translations: 'https://cdn.tldraw.com/translations/', icons: 'https://cdn.tldraw.com/icons/', fonts: 'https://cdn.tldraw.com/fonts/' }}
+      <Tldraw 
         shapeUtils={customShapeUtils}
         components={{
           Toolbar: null,
           DebugMenu: null,
-          ContextMenu: null,
+          MainMenu: null,
           PageMenu: null,
           NavigationPanel: null,
-          MainMenu: null,
+          ContextMenu: null,
+          Minimap: null,
           StylePanel: null,
           ZoomMenu: null,
-          Minimap: null,
           HelperButtons: null,
-          QuickActions: null,
-          ActionsMenu: null,
-          HelpMenu: null,
-          SharePanel: null
+          KeyboardShortcutsDialog: null,
+          QuickActions: null
         }}
-        options={{
-          maxPages: 1,
-        }}
+        // Remove explicit assetUrls to let tldraw auto-resolve locally or via node_modules
       >
         <CanvasContent />
         <Omnibar />
