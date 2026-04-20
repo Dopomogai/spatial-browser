@@ -22,10 +22,29 @@ function setupWebSocketServer() {
   // Hardened WebView isolation
 app.on('web-contents-created', (event, contents) => {
   if (contents.getType() === 'webview') {
-    // Intercept native Webview right-clicks and suppress the default chromium menu
-    contents.on('context-menu', (e) => {
+    // Intercept native Webview right-clicks and explicitly ask Electron to pop a basic text-editing menu
+    // This provides native copy/paste without breaking React layer clicks
+    contents.on('context-menu', (e, params) => {
       e.preventDefault();
-      // We process the manual IPC triggered menu instead via our show-webview-context-menu hook
+      
+      const menu = Menu.buildFromTemplate([
+        { label: 'Copy', role: 'copy', enabled: params.editFlags.canCopy },
+        { label: 'Paste', role: 'paste', enabled: params.editFlags.canPaste },
+        { label: 'Cut', role: 'cut', enabled: params.editFlags.canCut },
+        { type: 'separator' },
+        { label: 'Select All', role: 'selectAll', enabled: params.editFlags.canSelectAll },
+        { type: 'separator' },
+        { 
+          label: 'Spawn Tab Here', 
+          click: () => {
+             if (mainWindow) mainWindow.webContents.send('spawn-tab-center')
+          }
+        },
+      ])
+      
+      if (mainWindow) {
+         menu.popup({ window: mainWindow })
+      }
     });
 
     contents.setWindowOpenHandler(({ url }) => {
