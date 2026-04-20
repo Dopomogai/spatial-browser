@@ -1,15 +1,15 @@
 // V2 Store utilizing @xyflow/react native types
 import { create } from 'zustand'
 import { set as idbSet, get as idbGet } from 'idb-keyval'
-import { Node, Edge, OnNodesChange, OnEdgesChange, OnConnect, applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react'
-import type { Connection } from '@xyflow/react'
+import { Node, OnNodesChange, OnEdgesChange, OnConnect, applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react'
+import type { Connection, Edge } from '@xyflow/react'
 
 declare const supabase: any;
 
 export type WidgetState = 'active' | 'sleeping' | 'minimized'
 
 // We map our SpatialWidget directly onto the React Flow 'Node.data' object type
-export interface BrowserWidgetData {
+export interface BrowserWidgetData extends Record<string, unknown> {
   url: string
   title: string
   faviconUrl: string
