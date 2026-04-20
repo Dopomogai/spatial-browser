@@ -109,7 +109,7 @@ export const TopTabBar: React.FC = () => {
                   className="text-on_surface_variant hover:text-white transition-colors ml-2" 
                   title="Save Canvas As New Profile"
                 >
-                    <Plus size={14} />
+                    {Plus ? <Plus size={14} /> : '+'}
                 </button>
             </div>
 
@@ -172,7 +172,7 @@ export const TopTabBar: React.FC = () => {
                                 onClick={handleAdd}
                                 className="h-8 w-8 flex-shrink-0 flex flex-col items-center justify-center rounded-full hover:bg-surface_container transition-colors mx-1 my-auto text-on_surface_variant hover:text-white"
                             >
-                                <Plus size={18} strokeWidth={2.5} />
+                                {Plus ? <Plus size={18} strokeWidth={2.5} /> : '+'}
                             </button>
                         </div>
                     )}

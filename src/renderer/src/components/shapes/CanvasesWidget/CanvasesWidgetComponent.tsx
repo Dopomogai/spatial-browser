@@ -37,7 +37,7 @@ export const CanvasesWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => 
           <span className="text-white font-medium text-sm">Workspace Canvases</span>
         </div>
         <button className="p-1 rounded bg-primary/20 text-primary hover:bg-primary/40 transition-colors">
-          <Plus size={16} />
+          {Plus ? <Plus size={16} /> : '+'}
         </button>
       </div>
 

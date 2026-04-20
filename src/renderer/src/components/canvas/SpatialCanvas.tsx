@@ -298,7 +298,7 @@ const CanvasContent = () => {
                 }}
                 className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex flex-row items-center gap-2"
               >
-                  <Plus size={14} /> Spawn Tab Here
+                  {Plus ? <Plus size={14} /> : '+'} Spawn Tab Here
               </button>
               <div className="w-full h-px bg-white/5 my-1"></div>
               <button 
