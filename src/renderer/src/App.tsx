@@ -17,6 +17,16 @@ function App() {
 
     // Listen for Cmd+K and Spacebar
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent browser default undo action so we cleanly use our array engine
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+          e.preventDefault()
+          if (e.shiftKey) {
+             useCanvasStore.getState().redo()
+          } else {
+             useCanvasStore.getState().undo()
+          }
+      }
+
       if (e.key === 'Shift') {
         window.dispatchEvent(new CustomEvent('shift-state-change', { detail: { held: true } }))
       }
