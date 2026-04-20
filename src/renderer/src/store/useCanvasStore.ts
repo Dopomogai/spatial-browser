@@ -1,3 +1,4 @@
+declare const supabase: any;
 
 import { create } from 'zustand'
 import { set, get } from 'idb-keyval'
@@ -17,6 +18,8 @@ export interface SpatialWidget {
   h: number
   interactionState: WidgetState
   lastActive: number      // Unix timestamp
+  tabHistory: string[]   // Added for back/forward support (Time Machine)
+  currentHistoryIndex: number
 }
 
 export interface WorkspaceProfile {
@@ -45,10 +48,12 @@ export interface CanvasStore {
   deleteProfile: (profileId: string) => void
   undo: () => void
   redo: () => void
+  recordActionLog: (actionType: string, agentId: string | null, details: any) => void
+  checkCameraBounds: (viewportBounds: any, zZoom: number) => void
 }
 
 // Debounce for saving to IDB to avoid performance hits
-let saveTimeout: NodeJS.Timeout
+let saveTimeout: any
 
 export const useCanvasStore = create<CanvasStore>((setStore) => ({
   widgets: {},
@@ -74,7 +79,9 @@ export const useCanvasStore = create<CanvasStore>((setStore) => ({
       w: 800,
       h: 600,
       interactionState: 'active',
-      lastActive: Date.now()
+      lastActive: Date.now(),
+      tabHistory: [url],
+      currentHistoryIndex: 0
     }
     
     setStore((state) => {
@@ -90,7 +97,8 @@ export const useCanvasStore = create<CanvasStore>((setStore) => ({
       
       const oldState = {} as Partial<SpatialWidget>
       for (const k in updates) { // record the old values for the updated keys 
-        oldState[k] = state.widgets[id][k] 
+        const key = k as keyof SpatialWidget
+        (oldState as any)[key] = state.widgets[id][key]
       }
       const newWidgets = {
         ...state.widgets,
@@ -240,6 +248,27 @@ export const useCanvasStore = create<CanvasStore>((setStore) => ({
            persistState(newState)
            return newState
       })
+  },
+
+  recordActionLog: (actionType, agentId, details) => {
+      if (typeof supabase !== 'undefined' && supabase) {
+          supabase
+            .from('spatial_timeline')
+            .insert({
+                action_type: actionType,
+                agent_id: agentId,
+                details: details,
+                created_at: new Date().toISOString()
+            })
+            .then(({ error }: { error: any }) => {
+                if (error) console.warn('Supabase timeline logging failed:', error.message)
+            })
+      }
+  },
+
+  checkCameraBounds: (viewportBounds, zZoom) => {
+      // Logic to determine if windows are outside TLDraw camera viewport
+      // and log to spatial_timeline if necessary based on hysteresis math
   }
 
 }))
@@ -271,18 +300,44 @@ function persistState(state: Partial<CanvasStore>) {
     set('spatial-canvas-state', stateToSave).catch(console.error)
     
     // Remote cloud persistence
-    if (state.currentProfileId && supabase) {
+    if (state.currentProfileId && typeof supabase !== 'undefined' && supabase) {
+        const currentStateJson = stateToSave;
         supabase
           .from('spatial_workspaces')
           .upsert({ 
               id: state.currentProfileId, 
               name: profilesToSave.find(p => p.id === state.currentProfileId)?.name || 'Default',
-              state_json: stateToSave,
+              state_json: currentStateJson,
               updated_at: new Date().toISOString()
           })
-          .then(({ error }) => {
+          .then(({ error }: { error: any }) => {
               if (error) console.warn('Supabase sync failed (likely missing keys):', error.message)
           })
+
+        // Asynchronously persist individual spatial_widgets
+        if (state.widgets) {
+            const widgetsArray = Object.values(state.widgets);
+            
+            widgetsArray.forEach(widget => {
+                // We avoid clobbering public.workspaces and persist directly to spatial_widgets
+                supabase
+                  .from('spatial_widgets')
+                  .upsert({
+                      id: widget.id,
+                      workspace_id: state.currentProfileId,
+                      url: widget.url,
+                      x: Math.round(widget.x),
+                      y: Math.round(widget.y),
+                      w: Math.round(widget.w),
+                      h: Math.round(widget.h),
+                      state: widget.interactionState,
+                      updated_at: new Date().toISOString()
+                  })
+                  .then(({ error }: { error: any }) => {
+                      if (error) console.warn(`Supabase spatial_widgets sync failed for ${widget.id}:`, error.message)
+                  })
+            });
+        }
     }
   }, 1000)
 }
