@@ -54,6 +54,11 @@ export interface CanvasStore {
   updateWidgetData: (id: string, dataUpdates: Partial<BrowserWidgetData>) => void
   removeWidget: (id: string) => void
   
+  undo: () => void
+  redo: () => void
+  undoStack: AppNode[][]
+  redoStack: AppNode[][]
+  
   setOmnibarOpen: (open: boolean, position?: { x: number; y: number } | null) => void
   setSpacebarHeld: (held: boolean) => void
 
@@ -72,12 +77,43 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   isSpacebarHeld: false,
   omnibarPosition: null,
 
+  undoStack: [],
+  redoStack: [],
+
+  undo: () => set((state) => {
+    if (state.undoStack.length === 0) return state;
+    const previousNodes = state.undoStack[state.undoStack.length - 1];
+    const newUndoStack = state.undoStack.slice(0, -1);
+    const newRedoStack = [...state.redoStack, state.nodes];
+    const newState = { nodes: previousNodes, undoStack: newUndoStack, redoStack: newRedoStack };
+    persistState({ ...state, ...newState });
+    return newState;
+  }),
+
+  redo: () => set((state) => {
+    if (state.redoStack.length === 0) return state;
+    const nextNodes = state.redoStack[state.redoStack.length - 1];
+    const newRedoStack = state.redoStack.slice(0, -1);
+    const newUndoStack = [...state.undoStack, state.nodes];
+    const newState = { nodes: nextNodes, undoStack: newUndoStack, redoStack: newRedoStack };
+    persistState({ ...state, ...newState });
+    return newState;
+  }),
+
   // React Flow internal reconciliation overrides
   onNodesChange: (changes) => {
-    set({
-      nodes: applyNodeChanges(changes, get().nodes),
+    set((state) => {
+      // Only track physical movement in the undo stack
+      const isPositionChange = changes.some(c => c.type === 'position' && !c.dragging);
+      const newUndoStack = isPositionChange ? [...state.undoStack, state.nodes].slice(-50) : state.undoStack;
+      const newState = {
+        nodes: applyNodeChanges(changes, state.nodes),
+        undoStack: newUndoStack,
+        redoStack: isPositionChange ? [] : state.redoStack
+      };
+      persistState({ ...state, ...newState })
+      return newState;
     });
-    persistState(get())
   },
   onEdgesChange: (changes) => {
     set({

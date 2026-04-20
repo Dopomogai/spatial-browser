@@ -13,11 +13,14 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
   const { updateWidgetData, removeWidget, isSpacebarHeld } = useCanvasStore()
   const widget = data as any // data mapped via AppNode in store
   const webviewRef = useRef<any>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   
   const [isReady, setIsReady] = useState(false)
   const [isShiftHeld, setIsShiftHeld] = useState(false)
   const [canGoBack, setCanGoBack] = useState(false)
   const [canGoForward, setCanGoForward] = useState(false)
+  const [editingUrl, setEditingUrl] = useState('')
+  const [isEditing, setIsEditing] = useState(false)
   const { setNodes } = useReactFlow() // Natively resize nodes
 
   // Hardware controls listening
@@ -37,13 +40,19 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
     const handleContextMenu = (e: any) => e.preventDefault()
 
     const handleDidNavigate = (e: any) => {
-      if (e.url !== widget.url) updateWidgetData(id, { url: e.url })
+      if (e.url !== widget.url) {
+          updateWidgetData(id, { url: e.url })
+          if (!isEditing) setEditingUrl(e.url)
+      }
       setCanGoBack(webviewRef.current?.canGoBack() || false)
       setCanGoForward(webviewRef.current?.canGoForward() || false)
     }
     
     const handleDidNavigateInPage = (e: any) => {
-      if (e.url !== widget.url && e.isMainFrame) updateWidgetData(id, { url: e.url })
+      if (e.url !== widget.url && e.isMainFrame) {
+          updateWidgetData(id, { url: e.url })
+          if (!isEditing) setEditingUrl(e.url)
+      }
       setCanGoBack(webviewRef.current?.canGoBack() || false)
       setCanGoForward(webviewRef.current?.canGoForward() || false)
     }
@@ -111,6 +120,26 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
       updateWidgetData(id, { w: 800, h: 600 });
   }
 
+  const handleUrlSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!editingUrl || !webviewRef.current) return;
+      
+      let finalUrl = editingUrl.trim();
+      const domainRegex = /^((https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}|localhost):\d*/;
+      
+      if (domainRegex.test(finalUrl)) {
+        if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+          finalUrl = `https://${finalUrl}`
+        }
+      } else {
+          finalUrl = `https://www.google.com/search?q=${encodeURIComponent(finalUrl)}`
+      }
+
+      setEditingUrl(finalUrl)
+      setIsEditing(false);
+      webviewRef.current.loadURL(finalUrl);
+  }
+
   return (
     <>
     <NodeResizer 
@@ -155,10 +184,23 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
 
         <div className="flex-1 mx-6 flex justify-center cursor-move custom-drag-handle"> 
           {/* React flow allows applying ".custom-drag-handle" class to limit dragging to header only! */}
-          <div className="bg-surface-container-high px-4 py-1.5 rounded-full text-xs font-mono text-on-surface-variant/80 border border-outline-variant/20 flex items-center gap-2 max-w-sm w-full truncate shadow-inner">
-            <Globe size={12} className="opacity-50" />
-            <span className="truncate">{widget.url}</span>
-          </div>
+          <form 
+            onSubmit={handleUrlSubmit} 
+            className={`bg-surface-container-high px-4 py-1.5 rounded-full text-xs font-mono border border-outline-variant/20 flex items-center gap-2 max-w-sm w-full shadow-inner ${isEditing ? 'ring-1 ring-primary border-primary/50' : 'text-on-surface-variant/80'}`}
+          >
+            <Globe size={12} className="opacity-50 shrink-0" />
+            <input 
+               ref={inputRef}
+               className="bg-transparent w-full outline-none truncate"
+               value={isEditing ? editingUrl : (widget.url)}
+               onFocus={() => {
+                   setIsEditing(true);
+                   setEditingUrl(widget.url);
+               }}
+               onBlur={() => setIsEditing(false)}
+               onChange={(e) => setEditingUrl(e.target.value)}
+            />
+          </form>
         </div>
         <div className="w-20"></div>
       </div>

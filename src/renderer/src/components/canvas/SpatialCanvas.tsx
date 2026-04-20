@@ -18,6 +18,19 @@ const CanvasContent = () => {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, updateWidgetData } = useCanvasStore()
   const { setCenter, screenToFlowPosition, getZoom, getViewport } = useReactFlow()
   const { setOmnibarOpen, isSpacebarHeld } = useCanvasStore()
+  
+  // Track shift explicitly to manipulate scroll behaviors
+  const [isShiftHeld, setIsShiftHeld] = useState(false)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Shift') setIsShiftHeld(true) }
+    const handleKeyUp = (e: KeyboardEvent) => { if (e.key === 'Shift') setIsShiftHeld(false) }
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown)
+        window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [])
 
   const [contextMenuOpen, setContextMenuOpen] = useState(false)
   const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 })
@@ -108,8 +121,9 @@ const CanvasContent = () => {
         nodeTypes={nodeTypes}
         // Force the background to intercept the mouse pan event ONLY when Space or Shift is held
         panOnScroll={true}
-        panOnDrag={isSpacebarHeld}
-        zoomOnScroll={true}
+        panOnDrag={isSpacebarHeld || isShiftHeld}
+        zoomOnScroll={false} // Disable default zoom to let macOS trackpad scroll to pan correctly
+        zoomOnPinch={true}
         zoomOnDoubleClick={false}
         minZoom={0.05}
         maxZoom={2}
