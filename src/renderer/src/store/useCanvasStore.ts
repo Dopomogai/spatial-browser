@@ -1,7 +1,8 @@
 // V2 Store utilizing @xyflow/react native types
 import { create } from 'zustand'
 import { set as idbSet, get as idbGet } from 'idb-keyval'
-import { Node, Edge, OnNodesChange, OnEdgesChange, OnConnect, applyNodeChanges, applyEdgeChanges, addEdge, Connection } from '@xyflow/react'
+import { Node, Edge, OnNodesChange, OnEdgesChange, OnConnect, applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react'
+import type { Connection } from '@xyflow/react'
 
 declare const supabase: any;
 
