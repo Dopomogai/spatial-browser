@@ -20,7 +20,7 @@ const nodeTypes: NodeTypes = {
 const CanvasContent = () => {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, updateWidgetData, lastViewport } = useCanvasStore()
   const { setCenter, screenToFlowPosition, getZoom, getViewport, setViewport } = useReactFlow()
-  const { setOmnibarOpen, isSpacebarHeld } = useCanvasStore()
+  const { setOmnibarOpen, isSpacebarHeld, isAppMaximized } = useCanvasStore()
   
   // Track shift explicitly to manipulate scroll behaviors
   const [isShiftHeld, setIsShiftHeld] = useState(false)
@@ -153,15 +153,7 @@ const CanvasContent = () => {
         useCanvasStore.getState().setTopTabBarVisible(!isFullScreen);
         
         if (isFullScreen) {
-            // setCenter takes x,y of the exact point to focus on, and zoom.
-            // When putting the tab center at widget.x + w/2 and widget.y + h/2, with zoom 1, 
-            // the innerWidth and innerHeight of the browser matches the widget size exactly,
-            // so it naturally frames it perfectly.
-            setCenter(
-                widget.position.x + (widget.data.w / 2),
-                widget.position.y + (widget.data.h / 2),
-                { zoom: 1, duration: 300 }
-            )
+            // Do NOT re-center. toggleFullscreen already computed the exact viewport boundaries.
         } else {
             // Restore previous sizing if available
             updateWidgetData(tabId, { 
@@ -169,11 +161,7 @@ const CanvasContent = () => {
                 w: widget.data.tabHistoryW || 800, 
                 h: widget.data.tabHistoryH || 600 
             })
-            setCenter(
-                widget.position.x + (widget.data.tabHistoryW || 800) / 2,
-                widget.position.y + (widget.data.tabHistoryH || 600) / 2,
-                { zoom: 1, duration: 300 }
-            )
+            // We can re-center to the restored widget center if desired, or skip it
         }
     }
         
@@ -310,7 +298,7 @@ const CanvasContent = () => {
         />
         
         {/* We use ReactFlow's natively styled components, customized heavily to match LiquidGlass Dopomogai style */}
-        {useCanvasStore((state) => state.isTopTabBarVisible) && (
+        {useCanvasStore((state) => state.isTopTabBarVisible) && !isAppMaximized && (
           <MiniMap 
             onNodeClick={(e, node) => {
                 setCenter(node.position.x + (node.data?.w as number || 800) / 2, node.position.y + (node.data?.h as number || 600) / 2, { duration: 500, zoom: 1 })

@@ -48,6 +48,8 @@ export interface WorkspaceProfile {
 }
 
 export interface CanvasStore {
+  isAppMaximized: boolean
+  setIsAppMaximized: (maximized: boolean) => void
   // React Flow Core State
   nodes: AppNode[]
   edges: Edge[]
@@ -99,6 +101,8 @@ export interface CanvasStore {
 let saveTimeout: any
 
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
+  isAppMaximized: false,
+  setIsAppMaximized: (maximized) => set({ isAppMaximized: maximized }),
   nodes: [],
   edges: [],
   currentProfileId: 'default',
@@ -226,26 +230,49 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
   toggleFullscreen: (id) => {
     set((state) => {
+      const isMaxing = !state.isAppMaximized;
+      const viewport = state.lastViewport;
+      
       const newNodes = state.nodes.map((node) => {
         if (node.id === id) {
-          return {
-            ...node,
-            position: { x: 0, y: 0 },
-            data: {
-              ...node.data,
-              w: window.innerWidth,
-              h: window.innerHeight,
-              tabHistoryW: node.data.w,
-              tabHistoryH: node.data.h,
-              _preFullscreenX: node.position.x,
-              _preFullscreenY: node.position.y
-            }
-          } as AppNode;
+          // If we are currently maximizing
+          if (isMaxing) {
+              const flowX = -viewport.x / viewport.zoom;
+              const flowY = -viewport.y / viewport.zoom;
+              
+              return {
+                ...node,
+                position: { x: flowX, y: flowY },
+                data: {
+                  ...node.data,
+                  w: window.innerWidth / viewport.zoom,
+                  h: window.innerHeight / viewport.zoom,
+                  tabHistoryW: node.data.w,
+                  tabHistoryH: node.data.h,
+                  _preFullscreenX: node.position.x,
+                  _preFullscreenY: node.position.y
+                }
+              } as AppNode;
+          } else {
+              // If we are un-maximizing, restoring
+              return {
+                ...node,
+                position: { 
+                  x: node.data._preFullscreenX !== undefined ? node.data._preFullscreenX : node.position.x, 
+                  y: node.data._preFullscreenY !== undefined ? node.data._preFullscreenY : node.position.y 
+                },
+                data: {
+                  ...node.data,
+                  w: node.data.tabHistoryW || 800,
+                  h: node.data.tabHistoryH || 600,
+                }
+              } as AppNode;
+          }
         }
         return node;
       });
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50);
-      const newState = { nodes: newNodes, undoStack: newUndoStack };
+      const newState = { nodes: newNodes, undoStack: newUndoStack, isAppMaximized: isMaxing };
       persistState({ ...state, ...newState });
       return newState;
     });
