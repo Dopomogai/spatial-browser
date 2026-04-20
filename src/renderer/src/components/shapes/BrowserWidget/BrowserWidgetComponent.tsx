@@ -149,116 +149,16 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
     e.stopPropagation()
   }
 
-  // MINIMIZED STATE
-  if (widget.interactionState === 'minimized') {
-    return (
-      <div 
-        className="w-full h-full bg-surface-container-highest/80 backdrop-blur-xl border border-outline-variant/30 rounded-full flex items-center px-4 gap-3 shadow-[0_12px_32px_rgba(0,0,0,0.3)] hover:bg-surface-container-highest transition-colors cursor-pointer group no-drag-region"
-        onPointerDown={handlePointerDown}
-        onClick={() => {
-          updateWidget(widget.id, { interactionState: 'active' })
-          // Restore original shape size if we had logic for it, assuming standard 800x600 for now
-          editor.updateShape({ id: shape.id, type: 'browser_widget', props: { w: 800, h: 600 } } as any)
-        }}
-      >
-        <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center text-primary">
-          <Globe size={14} />
-        </div>
-        <span className="text-sm font-medium text-on-surface truncate flex-1">{widget.title || new URL(widget.url).hostname}</span>
-        <button 
-          className="opacity-0 group-hover:opacity-100 hover:bg-error/20 hover:text-error p-1 rounded-full transition-all"
-          onClick={(e) => { e.stopPropagation(); removeWidget(widget.id); editor.deleteShape(shape.id) }}
-        >
-          <X size={14} />
-        </button>
-      </div>
-    )
-  }
+  // We handle sleep/minimized states via CSS injection to prevent `<webview>` context destruction.
+  // MINIMIZED AND SLEEPING STATES ARE NOW INTEGRATED VIA CSS OVERLAYS IN THE MAIN RENDER 
 
-  // SLEEPING STATE
-  if (widget.interactionState === 'sleeping') {
-    return (
-      <div className="w-full h-full bg-[#131315] rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.5)] border border-outline-variant/30 flex flex-col overflow-hidden relative no-drag-region cursor-pointer group">
-        <div className="h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4 z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-surface-container-highest"></div>
-            <div className="w-3 h-3 rounded-full bg-surface-container-highest"></div>
-            <div className="w-3 h-3 rounded-full bg-surface-container-highest"></div>
-          </div>
-          <div className="flex-1 mx-8 flex justify-center text-on-surface-variant/50 group-hover:text-on-surface-variant transition-colors">
-            <div className="bg-surface-container-highest/60 px-4 py-1.5 rounded-full text-xs font-mono border border-outline-variant/20 flex items-center gap-2 max-w-sm w-full truncate">
-              <span className="relative flex h-2 w-2 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ffb868] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ffb868]"></span>
-              </span>
-              <span className="truncate ml-1">{widget.url}</span>
-            </div>
-          </div>
-          <div className="w-14"></div> {/* Spacer to balance flex-1 */}
-        </div>
-        <div className="flex-1 w-full bg-black relative flex items-center justify-center overflow-hidden">
-          {widget.screenshotBase64 ? (
-            <img src={widget.screenshotBase64} alt="site screenshot" className="absolute inset-0 w-full h-full object-cover opacity-50 grayscale-[20%]" />
-          ) : (
-            <div className="relative flex items-center justify-center flex-col gap-3 opacity-30">
-               <span className="relative flex h-6 w-6 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ffb868] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-6 w-6 bg-[#ffb868]"></span>
-                </span>
-            </div>
-          )}
-          {/* Overlay to wake up */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm">
-            <div className="bg-[#aac7ff] text-[#131315] px-6 py-2.5 rounded-full font-bold shadow-lg pointer-events-auto hover:bg-[#aac7ff]/90 flex items-center gap-2 transition-transform hover:scale-105"
-                 onClick={() => updateWidget(widget.id, { interactionState: 'active' })}>
-              <Globe size={16} /> Wake Tab
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // MINIMIZED STATE (Pill)
-  if (widget.interactionState === 'minimized') {
-    return (
-      <div className="w-full h-full bg-surface-container-high rounded-full shadow-lg border border-outline-variant/30 flex items-center px-4 gap-3 relative group no-drag-region cursor-pointer hover:bg-surface-container-highest transition-colors">
-        <Globe size={16} className="text-primary" />
-        <span className="text-sm font-semibold text-on-surface truncate flex-1">{widget.title || widget.url}</span>
-        
-        {/* Restore Button (Hidden until hover) */}
-        <button 
-          onClick={(e) => {
-            e.stopPropagation()
-            updateWidget(widget.id, { interactionState: 'active' })
-            editor.updateShape({ id: shape.id, type: 'browser_widget', props: { w: 800, h: 600 } } as any)
-          }}
-          className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-surface-container-lowest rounded-full text-on-surface-variant transition-all"
-        >
-          <Maximize2 size={14} />
-        </button>
-
-        {/* Close Button */}
-        <button 
-          onClick={(e) => {
-            e.stopPropagation()
-            removeWidget(widget.id)
-            editor.deleteShape(shape.id)
-          }}
-          className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-error/20 hover:text-error rounded-full text-on-surface-variant transition-all"
-        >
-          <X size={14} />
-        </button>
-      </div>
-    )
-  }
-
-  // ACTIVE STATE
   return (
     <div className="w-full h-full bg-surface-container-high rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.5)] border border-outline-variant/30 flex flex-col overflow-hidden relative group">
+      
       {/* Auto-hiding Top Bar */}
       <div 
-        className="h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4 justify-between transition-transform duration-300 transform translate-y-0 opacity-100 z-20 group-hover:translate-y-0 group-hover:opacity-100 absolute top-0 w-full"
+        className={`h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4 justify-between transition-transform duration-300 transform z-20 absolute top-0 w-full
+        ${widget.interactionState === 'active' ? 'translate-y-0 opacity-100 group-hover:translate-y-0 group-hover:opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}
         onPointerDown={handlePointerDown}
       >
         <div className="flex items-center gap-2">
@@ -298,9 +198,10 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       </div>
 
       {/* Webview Area */}
-      <div className="flex-1 w-full bg-white relative mt-12">
+      <div className={`flex-1 w-full bg-white relative ${widget.interactionState === 'active' ? 'mt-12 opacity-100' : 'mt-0 opacity-0 pointer-events-none filter blur-sm'}`}>
+        
         {/* Pan Hack Overlay */}
-        <div className="absolute inset-0 top-0 h-10 cursor-move pointer-events-auto" />
+        <div className={`absolute inset-0 top-0 h-10 ${widget.interactionState === 'active' ? 'cursor-move pointer-events-auto' : 'pointer-events-none'}`} />
         
         <webview
           ref={webviewRef}
@@ -310,6 +211,84 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
           preload={`file://${(window as any).api?.getPreloadPath?.() || '../preload/index.js'}`}
         />
       </div>
+
+      {/* SLEEPING OVERLAY (Mounted on top of blurred webview to avoid unmounting it) */}
+      {widget.interactionState === 'sleeping' && (
+        <div className="absolute inset-0 z-30 bg-[#131315] rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.5)] border border-outline-variant/30 flex flex-col overflow-hidden group pointer-events-none">
+          <div className="h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4 z-10 pointer-events-auto">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-surface-container-highest"></div>
+              <div className="w-3 h-3 rounded-full bg-surface-container-highest"></div>
+              <div className="w-3 h-3 rounded-full bg-surface-container-highest"></div>
+            </div>
+            <div className="flex-1 mx-8 flex justify-center text-on-surface-variant/50 group-hover:text-on-surface-variant transition-colors">
+              <div className="bg-surface-container-highest/60 px-4 py-1.5 rounded-full text-xs font-mono border border-outline-variant/20 flex items-center gap-2 max-w-sm w-full truncate">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ffb868] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ffb868]"></span>
+                </span>
+                <span className="truncate ml-1">{widget.url}</span>
+              </div>
+            </div>
+            <div className="w-14"></div>
+          </div>
+          <div className="flex-1 w-full bg-black relative flex items-center justify-center overflow-hidden pointer-events-auto">
+            {widget.screenshotBase64 ? (
+              <img src={widget.screenshotBase64} alt="site screenshot" className="absolute inset-0 w-full h-full object-cover opacity-50 grayscale-[20%]" />
+            ) : (
+              <div className="relative flex items-center justify-center flex-col gap-3 opacity-30">
+                 <span className="relative flex h-6 w-6 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ffb868] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-6 w-6 bg-[#ffb868]"></span>
+                  </span>
+              </div>
+            )}
+            <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm">
+              <div className="bg-[#aac7ff] text-[#131315] px-6 py-2.5 rounded-full font-bold shadow-lg pointer-events-auto hover:bg-[#aac7ff]/90 flex items-center gap-2 transition-transform hover:scale-105 cursor-pointer"
+                   onClick={(e) => { e.stopPropagation(); updateWidget(widget.id, { interactionState: 'active' }); }}>
+                <Globe size={16} /> Wake Tab
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MINIMIZED PILL OVERLAY */}
+      {widget.interactionState === 'minimized' && (
+        <div className="absolute inset-0 z-40 bg-surface-container-high rounded-full shadow-lg border border-outline-variant/30 flex items-center px-4 gap-3 group pointer-events-auto cursor-pointer hover:bg-surface-container-highest transition-colors"
+          onClick={(e) => {
+            e.stopPropagation()
+            updateWidget(widget.id, { interactionState: 'active' })
+            editor.updateShape({ id: shape.id, type: 'browser_widget', props: { w: 800, h: 600 } } as any)
+          }}
+        >
+          <Globe size={16} className="text-primary" />
+          <span className="text-sm font-semibold text-on-surface truncate flex-1">{widget.title || widget.url}</span>
+          
+          <button 
+            onClick={(e) => {
+              e.stopPropagation()
+              updateWidget(widget.id, { interactionState: 'active' })
+              editor.updateShape({ id: shape.id, type: 'browser_widget', props: { w: 800, h: 600 } } as any)
+            }}
+            className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-surface-container-lowest rounded-full text-on-surface-variant transition-all"
+          >
+            <Maximize2 size={14} />
+          </button>
+  
+          <button 
+            onClick={(e) => {
+              e.stopPropagation()
+              removeWidget(widget.id)
+              editor.deleteShape(shape.id)
+            }}
+            className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-error/20 hover:text-error rounded-full text-on-surface-variant transition-all"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
     </div>
   )
 }
