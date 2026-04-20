@@ -51,7 +51,14 @@ export interface CanvasStore {
   isSpacebarHeld: boolean
   omnibarPosition: { x: number; y: number } | null
 
+  // Theme State
+  theme: 'light' | 'dark'
+  setTheme: (theme: 'light' | 'dark') => void
+
   // Application Actions
+  isTopTabBarVisible: boolean
+  setTopTabBarVisible: (visible: boolean) => void
+  
   addWidget: (url: string, x: number, y: number) => void
   updateWidgetData: (id: string, dataUpdates: Partial<BrowserWidgetData>) => void
   removeWidget: (id: string) => void
@@ -64,6 +71,8 @@ export interface CanvasStore {
   setOmnibarOpen: (open: boolean, position?: { x: number; y: number } | null) => void
   setSpacebarHeld: (held: boolean) => void
 
+  lastViewport: { x: number; y: number; zoom: number }
+  setLastViewport: (viewport: { x: number; y: number; zoom: number }) => void
   loadInitialState: () => Promise<void>
   loadProfile: (profileId: string) => void
 }
@@ -76,8 +85,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   currentProfileId: 'default',
   profiles: [{ id: 'default', name: 'Default Profile', nodes: [], edges: [] }],
   isOmnibarOpen: false,
+  isTopTabBarVisible: true,
   omnibarPosition: null, // this holds physical canvas coordinates, NOT visual css integers!
   isSpacebarHeld: false,
+  theme: 'dark',
+
+  lastViewport: { x: 0, y: 0, zoom: 1 },
+
+  setTheme: (theme) => set({ theme }),
+  setTopTabBarVisible: (visible) => set({ isTopTabBarVisible: visible }),
 
   undoStack: [],
   redoStack: [],
@@ -205,11 +221,19 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   
   setSpacebarHeld: (held) => set({ isSpacebarHeld: held }),
 
+  setLastViewport: (viewport) => {
+    set({ lastViewport: viewport })
+    persistState(get())
+  },
+
   loadInitialState: async () => {
     try {
       const stored = await idbGet<Partial<CanvasStore>>('spatial-canvas-v2-state')
       if (stored) {
         set({ ...stored, isOmnibarOpen: false, omnibarPosition: null } as any)
+        if (stored.theme) {
+          document.documentElement.setAttribute('data-theme', stored.theme);
+        }
       }
     } catch (e) {
       console.error('Failed to load local DB', e)
@@ -233,6 +257,13 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
 }))
 
+// Subscribe to theme changes to update the DOM
+useCanvasStore.subscribe((state, prevState) => {
+  if (state.theme !== prevState.theme) {
+    document.documentElement.setAttribute('data-theme', state.theme);
+  }
+});
+
 function persistState(state: CanvasStore) {
   clearTimeout(saveTimeout)
   saveTimeout = setTimeout(() => {
@@ -251,7 +282,9 @@ function persistState(state: CanvasStore) {
         nodes: state.nodes,
         edges: state.edges,
         profiles: profilesToSave,
-        currentProfileId: state.currentProfileId
+        currentProfileId: state.currentProfileId,
+        theme: state.theme,
+        lastViewport: state.lastViewport
     }
 
     // Local persistence (V2 uses new key to avoid clashing with V1 TLDraw store)

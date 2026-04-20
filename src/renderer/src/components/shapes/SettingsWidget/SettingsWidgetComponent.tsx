@@ -1,19 +1,22 @@
 import React, { useState } from 'react'
 import { BaseBoxShapeUtil, HTMLContainer } from 'tldraw'
 import { Settings, Shield, Keyboard, Monitor, Key, Zap } from 'lucide-react'
+import { useCanvasStore } from '../../../store/useCanvasStore'
+
+// Define Section outside of component to prevent re-renders
+const Section = ({ title, icon: Icon, active, onClick }: any) => (
+  <button 
+    onClick={onClick}
+    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${active ? 'bg-primary/20 text-primary' : 'text-on_surface_variant hover:bg-white/5 hover:text-white'}`}
+  >
+    <Icon size={16} />
+    <span className="text-sm font-medium">{title}</span>
+  </button>
+)
 
 export const SettingsWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
   const [activeTab, setActiveTab] = useState('general')
-
-  const Section = ({ title, icon: Icon, active, onClick }: any) => (
-    <button 
-      onClick={onClick}
-      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${active ? 'bg-primary/20 text-primary' : 'text-on_surface_variant hover:bg-white/5 hover:text-white'}`}
-    >
-      <Icon size={16} />
-      <span className="text-sm font-medium">{title}</span>
-    </button>
-  )
+  const { theme, setTheme } = useCanvasStore()
 
   return (
     <HTMLContainer
@@ -66,6 +69,21 @@ export const SettingsWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => 
                 </div>
                 <div className="w-10 h-5 bg-primary rounded-full relative cursor-pointer shadow-[0_0_10px_rgba(170,199,255,0.3)]">
                   <div className="absolute right-1 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-white text-sm font-medium">Warm Light Theme</div>
+                  <div className="text-on_surface_variant text-[11px]">Toggle between warm light and dark modes.</div>
+                </div>
+                <div 
+                  className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${theme === 'light' ? 'bg-primary shadow-[0_0_10px_rgba(170,199,255,0.3)]' : 'bg-surface_container_highest'}`}
+                  onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                >
+                  <div 
+                    className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${theme === 'light' ? 'right-1' : 'left-1 bg-on_surface_variant'}`}
+                  ></div>
                 </div>
               </div>
 

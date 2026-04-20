@@ -137,6 +137,7 @@ const CanvasContent = () => {
         }
     }
         
+    const handleSpawnSettings = () => {
         const windowWidth = window.innerWidth
         const windowHeight = window.innerHeight
         const centerXV = windowWidth / 2
@@ -227,6 +228,12 @@ const CanvasContent = () => {
       return () => clearInterval(interval)
   }, [nodes, getViewport, updateWidgetData])
 
+  // Track and save viewport changes
+  const { setLastViewport } = useCanvasStore()
+  const onMoveEnd = (_event: any, viewport: { x: number; y: number; zoom: number }) => {
+    setLastViewport(viewport)
+  }
+
   return (
     <div className="w-full h-full relative">
       
@@ -237,6 +244,7 @@ const CanvasContent = () => {
         onEdgesChange={onEdgesChange}
         onPaneContextMenu={onPaneContextMenu}
         onConnect={onConnect}
+        onMoveEnd={(e, v) => onMoveEnd(e, v)}
         nodeTypes={nodeTypes}
         // Force the background to intercept the mouse pan event ONLY when Space or Shift is held
         panOnScroll={true}

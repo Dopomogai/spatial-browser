@@ -13,6 +13,7 @@ export const TopTabBar: React.FC = () => {
     const redo = useCanvasStore(state => state.redo)
     const undoStack = useCanvasStore(state => state.undoStack)
     const redoStack = useCanvasStore(state => state.redoStack)
+    const isTopTabBarVisible = useCanvasStore(state => state.isTopTabBarVisible)
     const [updater, setUpdater] = useState(0)
 
     // Force re-render when store updates specifically for top bar 
@@ -58,6 +59,8 @@ export const TopTabBar: React.FC = () => {
         setSortedWidgets(items);
         // We could also loop and update the `order` property in Zustand here for persistence
     };
+
+    if (!isTopTabBarVisible) return null;
 
     return (
         <div className="absolute top-0 left-0 right-0 h-12 bg-surface_container_lowest border-b border-outline_variant/10 flex items-center px-4 z-50 shadow-md">
@@ -117,7 +120,7 @@ export const TopTabBar: React.FC = () => {
                         <div 
                             {...provided.droppableProps}
                             ref={provided.innerRef}
-                            className="flex flex-1 items-end h-full gap-1 overflow-x-auto overflow-y-hidden no-scrollbar pt-2"
+                            className="flex flex-1 items-center h-full gap-2 overflow-x-auto overflow-y-hidden no-scrollbar px-2"
                         >
                             {sortedWidgets.map((w, index) => {
                                 let urlDisplay = 'New Tab'
@@ -138,10 +141,10 @@ export const TopTabBar: React.FC = () => {
                                                 {...provided.dragHandleProps}
                                                 onClick={(e) => handleFocus(w.id, e)}
                                                 className={`
-                                                    h-9 min-w-[140px] max-w-[240px] flex items-center justify-between px-3 
-                                                    rounded-t-lg border-t border-l border-r border-outline_variant/10
-                                                    cursor-pointer transition-colors group flex-shrink-0
-                                                    ${w.data?.interactionState === 'active' ? 'bg-surface_container_highest border-t-primary/30 text-primary shadow-[0_-4px_10px_rgba(0,0,0,0.2)] z-10' : 'bg-surface hover:bg-surface_container_high text-on_surface_variant z-0'}
+                                                    h-8 min-w-[140px] max-w-[240px] flex items-center justify-between px-3 
+                                                    rounded-full border border-outline_variant/20 backdrop-blur-md
+                                                    cursor-pointer transition-colors group flex-shrink-0 my-auto
+                                                    ${w.data?.interactionState === 'active' ? 'bg-surface_container_highest border-primary/30 text-primary shadow-[0_4px_10px_rgba(0,0,0,0.3)] z-10' : 'bg-surface/70 hover:bg-surface_container_high text-on_surface_variant z-0'}
                                                     ${snapshot.isDragging ? 'shadow-2xl opacity-90 z-50 ring-2 ring-primary scale-105' : ''}
                                                 `}
                                                 style={provided.draggableProps.style}
@@ -167,7 +170,7 @@ export const TopTabBar: React.FC = () => {
                             {provided.placeholder}
                             <button 
                                 onClick={handleAdd}
-                                className="h-8 w-8 flex-shrink-0 flex flex-col items-center justify-center rounded-t-lg hover:bg-surface_container transition-colors mb-0 mx-1 text-on_surface_variant hover:text-white"
+                                className="h-8 w-8 flex-shrink-0 flex flex-col items-center justify-center rounded-full hover:bg-surface_container transition-colors mx-1 my-auto text-on_surface_variant hover:text-white"
                             >
                                 <Plus size={18} strokeWidth={2.5} />
                             </button>

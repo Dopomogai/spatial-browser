@@ -10,6 +10,54 @@
   }
 }
 
+/* Warm Light Theme Overrides */
+[data-theme="light"] body {
+  @apply bg-[#f2efe9] text-gray-900;
+}
+
+/* Global UI Element overrides for Light Theme */
+[data-theme="light"] .bg-surface_container_highest,
+[data-theme="light"] .bg-surface-container-highest {
+  @apply bg-[#e6e2d8];
+}
+[data-theme="light"] .bg-surface_container_lowest,
+[data-theme="light"] .bg-surface-container-lowest {
+  @apply bg-[#f8f6f2];
+}
+[data-theme="light"] .bg-surface_container_high,
+[data-theme="light"] .bg-surface-container-high {
+  @apply bg-[#ded8cd];
+}
+[data-theme="light"] .bg-surface_container,
+[data-theme="light"] .bg-surface-container {
+  @apply bg-[#e5e1d7];
+}
+[data-theme="light"] .bg-surface_container_low,
+[data-theme="light"] .bg-surface-container-low {
+  @apply bg-[#eae7de];
+}
+[data-theme="light"] .text-on_surface_variant {
+  @apply text-gray-600;
+}
+[data-theme="light"] .text-white {
+  @apply text-black;
+}
+[data-theme="light"] .text-on-surface-variant {
+  @apply text-gray-700;
+}
+[data-theme="light"] .text-on-surface {
+  @apply text-gray-900;
+}
+[data-theme="light"] .border-white\/5 {
+  @apply border-black/10;
+}
+[data-theme="light"] .border-white\/10 {
+  @apply border-black/15;
+}
+[data-theme="light"] .border-white\/20 {
+  @apply border-black/20;
+}
+
 .mac-drag-region {
   -webkit-app-region: drag;
 }

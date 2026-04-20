@@ -6,7 +6,8 @@ import { useCanvasStore } from './store/useCanvasStore'
 
 function App() {
   const { setOmnibarOpen, setSpacebarHeld, loadInitialState, addWidget, updateWidget } = useCanvasStore()
-  const [showTopbar, setShowTopbar] = useState(true)
+  const isTopTabBarVisible = useCanvasStore(state => state.isTopTabBarVisible)
+  const setTopTabBarVisible = useCanvasStore(state => state.setTopTabBarVisible)
   const [showNewProfileModal, setShowNewProfileModal] = useState(false)
 
   useEffect(() => {
@@ -33,7 +34,7 @@ function App() {
       // Toggle Topbar visibility via Cmd+Shift+B
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'b') {
          e.preventDefault()
-         setShowTopbar(prev => !prev)
+         setTopTabBarVisible(!useCanvasStore.getState().isTopTabBarVisible)
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
@@ -97,7 +98,7 @@ function App() {
       </div>
 
       <div className="flex-1 w-full relative no-drag-region">
-        {showTopbar && <TopTabBar />}
+        <TopTabBar />
         <SpatialCanvas />
       </div>
 
