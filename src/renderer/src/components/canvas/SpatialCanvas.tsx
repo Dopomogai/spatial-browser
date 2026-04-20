@@ -245,6 +245,7 @@ export const SpatialCanvas: React.FC = () => {
       */}
       <Tldraw 
         shapeUtils={customShapeUtils}
+        allowedShapeTypes={['browser_widget', 'canvases_widget', 'settings_widget']}
         onMount={(editor) => {
             useCanvasStore.getState().setEditor(editor)
             editor.setCurrentTool('select')
