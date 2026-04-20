@@ -92,6 +92,16 @@ const CanvasContent = () => {
         }))
     }
 
+    const handleFullscreenToggled = (_e: any, { tabId, isFullScreen }: { tabId: string, isFullScreen: boolean }) => {
+        if (isFullScreen) {
+            updateWidgetData(tabId, { interactionState: 'active', w: window.innerWidth, h: window.innerHeight })
+            const widget = nodes.find(n => n.id === tabId)
+            if (widget) {
+                setCenter(widget.position.x + (window.innerWidth / 2), widget.position.y + (window.innerHeight / 2), { zoom: 1, duration: 300 })
+            }
+        }
+    }
+
     const handleSpawnSettings = () => {
         const id = `settings_widget_${Date.now()}`
         const viewport = getViewport()
@@ -128,12 +138,14 @@ const CanvasContent = () => {
     window.addEventListener('spawn-settings-widget', handleSpawnSettings)
     window.addEventListener('spawn-canvases-widget', handleSpawnCanvases)
     window.addEventListener('pan-to-widget' as any, handlePanToWidget)
+    window.electron?.ipcRenderer?.on('fullscreen-toggled', handleFullscreenToggled)
 
     return () => {
       window.removeEventListener('spawn-tab-center', handleSpawnCenter)
       window.removeEventListener('spawn-settings-widget', handleSpawnSettings)
       window.removeEventListener('spawn-canvases-widget', handleSpawnCanvases)
       window.removeEventListener('pan-to-widget' as any, handlePanToWidget)
+      window.electron?.ipcRenderer?.removeAllListeners('fullscreen-toggled')
     }
   }, [nodes, setCenter, setOmnibarOpen, getViewport])
 
