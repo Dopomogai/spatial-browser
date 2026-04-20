@@ -40,7 +40,24 @@
 .tl-grid line {
    stroke-dasharray: 2 4 !important;
 }
-.custom-resizer-handle { cursor: nwse-resize; position: absolute; z-index: 50; } 
+.custom-resizer-line.left:hover, .custom-resizer-line.right:hover {
+    cursor: ew-resize !important;
+}
+.custom-resizer-line.bottom:hover, .custom-resizer-line.top:hover {
+    cursor: ns-resize !important;
+}
+
+.custom-resizer-handle { 
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    cursor: nwse-resize; 
+    position: absolute; 
+    z-index: 50; 
+} 
+
+.react-flow__node:hover .custom-resizer-handle {
+    opacity: 1;
+}
 .custom-resizer-handle.top.left { cursor: nwse-resize; transform: translate(-25%, -25%); width: 24px !important; height: 24px !important; } 
 .custom-resizer-handle.top.right { cursor: nesw-resize; transform: translate(25%, -25%); width: 24px !important; height: 24px !important; } 
 .custom-resizer-handle.bottom.left { cursor: nesw-resize; transform: translate(-25%, 25%); width: 24px !important; height: 24px !important; } 

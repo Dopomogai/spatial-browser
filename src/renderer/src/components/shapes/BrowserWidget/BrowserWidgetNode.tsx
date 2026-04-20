@@ -192,12 +192,13 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
   return (
     <>
     <NodeResizer 
-        isVisible={widget.interactionState === 'active' && isHovered} 
+        isVisible={widget.interactionState === 'active'} 
         minWidth={300} 
         minHeight={200}
-        handleStyle={{ width: 12, height: 12, borderRadius: 0, background: 'transparent', border: 'none' }} 
+        handleStyle={{ width: 16, height: 16, borderRadius: 0, background: 'transparent', border: 'none' }} 
         handleClassName="custom-resizer-handle"
         lineStyle={{ borderWidth: 6, borderColor: 'transparent' }} 
+        lineClassName="custom-resizer-line"
         onResize={(e, params) => {
             updateWidgetData(id, { w: params.width, h: params.height })
         }} 
