@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
 import { Globe, X, Maximize2, ChevronLeft, ChevronRight, RotateCw, Copy } from 'lucide-react'
 import { NodeResizer, useReactFlow } from '@xyflow/react'
+import { SettingsWidgetComponent } from '../SettingsWidget/SettingsWidgetComponent'
 import type { NodeProps } from '@xyflow/react'
 
 // Helper to validate Base64 string bounds
@@ -313,111 +314,10 @@ const isValidDataUrl = (str: string | undefined): boolean => {
       >
         <div className={`absolute inset-0 top-0 h-10 ${widget.interactionState === 'active' ? 'cursor-move pointer-events-auto custom-drag-handle' : 'pointer-events-none'}`} />
         
-        {widget.url.startsWith('about:blank#settings') ? (
-             <div className="w-full h-full bg-surface-container flex flex-col items-center justify-start text-on_surface_variant overflow-y-auto p-4 pt-12 cursor-auto relative">
-                 <div className="w-full max-w-lg mb-6 flex flex-col gap-2 shrink-0 border-b border-white/10 pb-4">
-                     <h2 className="text-2xl font-bold text-white text-center">Settings</h2>
-                     <p className="text-sm opacity-70 text-center">System preferences and AI integrations.</p>
-                 </div>
-                 
-                 <div className="w-full max-w-lg space-y-4 px-2 pb-24 shrink-0">
-                     <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-3">
-                        <h3 className="font-semibold text-white">General UI</h3>
-                        <label className="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">Show Tab Shadows</span>
-                        </label>
-                        <label className="flex items-center gap-3 cursor-pointer group">
-                            <input defaultChecked type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">Enable Cinematic Auto-Focus (Zooming)</span>
-                        </label>
-                        <label className="flex items-center gap-3 cursor-pointer group">
-                            <input defaultChecked type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">Canvas Grid</span>
-                        </label>
-                        <label className="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">Dark Mode</span>
-                        </label>
-
-                        <div className="space-y-3 mt-4 border-t border-white/5 pt-4">
-                          <div className="text-white text-sm font-medium">Default Tab Size</div>
-                          <div className="text-on_surface_variant text-[11px] mb-2">Configure dimensions when spawning a new tab.</div>
-                          
-                          <div className="flex gap-3">
-                            <div className="flex flex-col flex-1 gap-1">
-                              <label className="text-xs text-on_surface_variant ml-1">Width</label>
-                              <input 
-                                type="number"
-                                min={300}
-                                max={3000}
-                                value={defaultTabWidth}
-                                onChange={(e) => setDefaultTabSize(Number(e.target.value) || 800, defaultTabHeight)}
-                                className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2 text-white text-sm outline-none bg-black/20"
-                              />
-                            </div>
-                            <div className="flex flex-col flex-1 gap-1">
-                              <label className="text-xs text-on_surface_variant ml-1">Height</label>
-                              <input 
-                                type="number"
-                                min={200}
-                                max={3000}
-                                value={defaultTabHeight}
-                                onChange={(e) => setDefaultTabSize(defaultTabWidth, Number(e.target.value) || 600)}
-                                className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2 text-white text-sm outline-none bg-black/20"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="text-red-500 text-xs font-semibold mt-2">Coming Soon (Phase 2)</div>
-                     </div>
-                     
-                    <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-3">
-                        <h3 className="font-semibold text-white">Ghost Cursor (AI Navigation)</h3>
-                        <label className="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">Allow autonomous clicking and typing (Ghost Mode)</span>
-                        </label>
-                        <label className="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">Enable DOM extraction for visual grounding</span>
-                        </label>
-                        <div className="text-red-500 text-xs font-semibold mt-2">Coming Soon (Phase 2)</div>
-                    </div>
-                     
-                     <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-4">
-                        <h3 className="font-semibold text-white">Database & Sync</h3>
-                        <button className="bg-primary/20 text-primary w-full py-2.5 rounded-lg border border-primary/20 font-medium hover:bg-primary hover:text-white transition-all text-sm outline-none">
-                            Force Manual Sync (Supabase)
-                        </button>
-                        <button className="bg-error/10 text-error w-full py-2.5 rounded-lg border border-error/20 font-medium hover:bg-error hover:text-white transition-all text-sm outline-none">
-                            Wipe Local Spatial DB cache
-                        </button>
-                     </div>
-
-                     <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-3">
-                        <h3 className="font-semibold text-white">Advanced / Integrations</h3>
-                        <label className="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">DigitalOcean Supabase Syncer</span>
-                        </label>
-                        <label className="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">Oragai Spatial OS Control Proxy</span>
-                        </label>
-                        <label className="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">Show Hardware Ghost Cursors (AI Debug)</span>
-                        </label>
-                     </div>
-                 </div>
-                 
-                 <div className="mt-8 mb-4 opacity-30 text-xs text-center flex flex-col gap-1 pointer-events-none shrink-0">
-                     <span>Dopomogai Spatial OS v1.5.0</span>
-                     <span>Chromium {window.electron?.process?.chrome || ''} • Electron {window.electron?.process?.electron || ''}</span>
-                 </div>
-             </div>
+        {widget.url === 'about:blank#settings' || widget.url.startsWith('about:blank#settings') ? (
+            <div className="w-full h-full pointer-events-auto overflow-hidden">
+                <SettingsWidgetComponent shape={{ id }} />
+            </div>
         ) : widget.url.startsWith('about:blank#history') ? (
              <div className="w-full h-full bg-surface-container flex flex-col items-center justify-center text-on_surface_variant overflow-y-auto p-4 cursor-auto relative">
                  <div className="w-full max-w-lg mb-6 flex flex-col gap-2">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { BaseBoxShapeUtil, HTMLContainer } from 'tldraw'
+
 import { Settings, Shield, Keyboard, Monitor, Key, Zap } from 'lucide-react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
 
@@ -19,7 +19,7 @@ export const SettingsWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => 
   const { theme, setTheme, defaultTabWidth, defaultTabHeight, setDefaultTabSize } = useCanvasStore()
 
   return (
-    <HTMLContainer
+    <div
       id={shape.id}
       className="w-full h-full rounded-[16px] overflow-hidden flex pointer-events-auto"
       style={{
@@ -138,6 +138,6 @@ export const SettingsWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => 
           </div>
         )}
       </div>
-    </HTMLContainer>
+    </div>
   )
 }
