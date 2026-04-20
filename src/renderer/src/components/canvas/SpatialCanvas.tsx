@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { ReactFlow, Background, MiniMap, Controls, useReactFlow, ReactFlowProvider, NodeTypes } from '@xyflow/react'
+import { ReactFlow, Background, MiniMap, Controls, useReactFlow, ReactFlowProvider } from '@xyflow/react'
+import type { NodeTypes } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { BrowserWidgetNode } from '../shapes/BrowserWidget/BrowserWidgetNode'
 import { useCanvasStore } from '../../store/useCanvasStore'
