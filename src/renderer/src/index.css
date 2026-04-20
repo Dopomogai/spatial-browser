@@ -58,8 +58,18 @@
 .react-flow__node:hover .custom-resizer-handle {
     opacity: 1;
 }
-.custom-resizer-handle.top.left { cursor: nwse-resize; transform: translate(-25%, -25%); width: 24px !important; height: 24px !important; } 
-.custom-resizer-handle.top.right { cursor: nesw-resize; transform: translate(25%, -25%); width: 24px !important; height: 24px !important; } 
-.custom-resizer-handle.bottom.left { cursor: nesw-resize; transform: translate(-25%, 25%); width: 24px !important; height: 24px !important; } 
-.custom-resizer-handle.bottom.right { cursor: nwse-resize; transform: translate(25%, 25%); width: 24px !important; height: 24px !important; } 
+.custom-resizer-handle.top.left { cursor: nwse-resize; transform: translate(-50%, -50%); width: 32px !important; height: 32px !important; border-radius: 50%; } 
+.custom-resizer-handle.top.right { cursor: nesw-resize; transform: translate(50%, -50%); width: 32px !important; height: 32px !important; border-radius: 50%; } 
+.custom-resizer-handle.bottom.left { cursor: nesw-resize; transform: translate(-50%, 50%); width: 32px !important; height: 32px !important; border-radius: 50%; } 
+.custom-resizer-handle.bottom.right { cursor: nwse-resize; transform: translate(50%, 50%); width: 32px !important; height: 32px !important; border-radius: 50%; } 
+
+.custom-resizer-line {
+    z-index: 49;
+    pointer-events: auto !important;
+}
+
+.custom-resizer-line.top { height: 16px !important; transform: translateY(-8px); }
+.custom-resizer-line.bottom { height: 16px !important; transform: translateY(8px); }
+.custom-resizer-line.left { width: 16px !important; transform: translateX(-8px); }
+.custom-resizer-line.right { width: 16px !important; transform: translateX(8px); }
 .custom-resizer-handle:hover::after { content: ""; position: absolute; width: 100%; height: 100%; border: 3px solid rgba(59, 130, 246, 0.4); pointer-events: none; border-radius: 8px; box-sizing: border-box; }

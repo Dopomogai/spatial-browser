@@ -169,15 +169,14 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
 
   if (!widget) return null
 
-  // Resize helper that updates React Flow's native internal dimension trackers
-    const expandWidget = () => {
-        // Grab height from history so it restores fully (minus min bound safety)
-        updateWidgetData(id, { 
-            interactionState: 'active', 
-            w: Math.max(widget.tabHistoryW || 800, 300), 
-            h: Math.max(widget.tabHistoryH || 600, 200) 
-        })
-    }
+  const expandWidget = () => {
+      // Grab height from history so it restores fully (minus min bound safety)
+      updateWidgetData(id, { 
+          interactionState: 'active', 
+          w: Math.max(widget.tabHistoryW || 800, 300), 
+          h: Math.max(widget.tabHistoryH || 600, 200) 
+      })
+  }
 
   const handleUrlSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -228,8 +227,9 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
         ${widget.interactionState === 'active' ? 'translate-y-0 opacity-100 group-hover:translate-y-0 group-hover:opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
         
         <div className="flex items-center gap-2">
-          <button onClick={() => removeWidget(id)} className="w-3 h-3 rounded-full bg-error hover:opacity-80"></button>
+          <button type="button" onClick={() => removeWidget(id)} className="w-3 h-3 rounded-full bg-error hover:opacity-80"></button>
           <button 
+            type="button"
             onClick={() => {
               // Save prev dimensions to restore safely!
               updateWidgetData(id, { interactionState: 'minimized', w: 250, h: 48, tabHistoryW: currentW, tabHistoryH: currentH })
@@ -237,6 +237,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
             className="w-3 h-3 rounded-full bg-tertiary hover:opacity-80"
           ></button>
           <button 
+            type="button"
             onClick={() => {
               window.electron?.ipcRenderer?.send('toggle-fullscreen', id);
             }} 
@@ -245,13 +246,13 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
         </div>
         
         <div className="flex gap-2 ml-4 text-on-surface-variant flex-shrink-0 border-l border-white/5 pl-4">
-          <button onClick={() => { if(canGoBack) webviewRef.current?.goBack() }} disabled={!canGoBack} className={`hover:text-white transition-colors p-1 rounded hover:bg-white/10 ${!canGoBack && 'opacity-30 cursor-not-allowed'}`}>
+          <button type="button" onClick={() => { if(canGoBack) webviewRef.current?.goBack() }} disabled={!canGoBack} className={`hover:text-white transition-colors p-1 rounded hover:bg-white/10 ${!canGoBack && 'opacity-30 cursor-not-allowed'}`}>
             <ChevronLeft size={16} />
           </button>
-          <button onClick={() => { if(canGoForward) webviewRef.current?.goForward() }} disabled={!canGoForward} className={`hover:text-white transition-colors p-1 rounded hover:bg-white/10 ${!canGoForward && 'opacity-30 cursor-not-allowed'}`}>
+          <button type="button" onClick={() => { if(canGoForward) webviewRef.current?.goForward() }} disabled={!canGoForward} className={`hover:text-white transition-colors p-1 rounded hover:bg-white/10 ${!canGoForward && 'opacity-30 cursor-not-allowed'}`}>
             <ChevronRight size={16} />
           </button>
-          <button onClick={() => { webviewRef.current?.reload() }} className="hover:text-white transition-colors p-1 rounded hover:bg-white/10 ml-1">
+          <button type="button" onClick={() => { webviewRef.current?.reload() }} className="hover:text-white transition-colors p-1 rounded hover:bg-white/10 ml-1">
             <RotateCw size={14} />
           </button>
         </div>
@@ -302,19 +303,29 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
                             <input defaultChecked type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
                             <span className="text-sm group-hover:text-white transition-colors">Enable Cinematic Auto-Focus (Zooming)</span>
                         </label>
-                     </div>
-                     
-                     <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-3">
-                        <h3 className="font-semibold text-white">Oragai Copilot</h3>
                         <label className="flex items-center gap-3 cursor-pointer group">
                             <input defaultChecked type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">Show Vision Action Boxes (Red/Green outlines)</span>
+                            <span className="text-sm group-hover:text-white transition-colors">Canvas Grid</span>
                         </label>
                         <label className="flex items-center gap-3 cursor-pointer group">
                             <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">Auto-Execute suggested code</span>
+                            <span className="text-sm group-hover:text-white transition-colors">Dark Mode</span>
                         </label>
+                        <div className="text-red-500 text-xs font-semibold mt-2">Coming Soon (Phase 2)</div>
                      </div>
+                     
+                    <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-3">
+                        <h3 className="font-semibold text-white">Ghost Cursor (AI Navigation)</h3>
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
+                            <span className="text-sm group-hover:text-white transition-colors">Allow autonomous clicking and typing (Ghost Mode)</span>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
+                            <span className="text-sm group-hover:text-white transition-colors">Enable DOM extraction for visual grounding</span>
+                        </label>
+                        <div className="text-red-500 text-xs font-semibold mt-2">Coming Soon (Phase 2)</div>
+                    </div>
                      
                      <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-4">
                         <h3 className="font-semibold text-white">Database & Sync</h3>
@@ -379,7 +390,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
               <img src={widget.screenshotBase64} alt="site" className="absolute inset-0 w-full h-full object-cover opacity-50 grayscale-[20%]" />
              )}
              <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm">
-                <button className="bg-[#aac7ff] text-[#131315] px-6 py-2.5 rounded-full font-bold" onClick={(e) => { e.stopPropagation(); expandWidget() }}>
+                <button type="button" className="bg-[#aac7ff] text-[#131315] px-6 py-2.5 rounded-full font-bold" onClick={(e) => { e.stopPropagation(); expandWidget() }}>
                   Wake Tab
                 </button>
              </div>
@@ -393,10 +404,10 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
         >
           <Globe size={16} className="text-primary" />
           <span className="text-sm font-semibold text-on-surface truncate flex-1">{widget.title || widget.url}</span>
-          <button onClick={(e) => { e.stopPropagation(); expandWidget() }} className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-surface-container-lowest rounded-full text-on-surface-variant transition-all">
+          <button type="button" onClick={(e) => { e.stopPropagation(); expandWidget() }} className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-surface-container-lowest rounded-full text-on-surface-variant transition-all">
             <Maximize2 size={14} />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); removeWidget(id) }} className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-error/20 hover:text-error rounded-full text-on-surface-variant transition-all">
+          <button type="button" onClick={(e) => { e.stopPropagation(); removeWidget(id) }} className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-error/20 hover:text-error rounded-full text-on-surface-variant transition-all">
             <X size={14} />
           </button>
         </div>

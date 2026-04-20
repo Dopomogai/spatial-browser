@@ -16,6 +16,8 @@ export interface BrowserWidgetData extends Record<string, unknown> {
   screenshotBase64: string | null
   w: number
   h: number
+  tabHistoryW?: number
+  tabHistoryH?: number
   interactionState: WidgetState
   lastActive: number
   tabHistory: string[]

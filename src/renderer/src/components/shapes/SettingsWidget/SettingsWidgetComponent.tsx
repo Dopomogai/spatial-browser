@@ -77,6 +77,7 @@ export const SettingsWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => 
                   <option>Perplexity</option>
                 </select>
               </div>
+              <div className="text-red-500 text-xs font-semibold mt-2">Coming Soon (Phase 2)</div>
             </div>
           </div>
         )}

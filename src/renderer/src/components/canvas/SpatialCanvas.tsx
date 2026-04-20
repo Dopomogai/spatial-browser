@@ -118,8 +118,8 @@ const CanvasContent = () => {
             // the innerWidth and innerHeight of the browser matches the widget size exactly,
             // so it naturally frames it perfectly.
             setCenter(
-                widget.position.x + (window.innerWidth / 2), 
-                widget.position.y + (window.innerHeight / 2), 
+                widget.position.x + (window.innerWidth / 2) + 24,
+                widget.position.y + (window.innerHeight / 2) + 24,
                 { zoom: 1, duration: 300 }
             )
         } else {
@@ -129,13 +129,13 @@ const CanvasContent = () => {
                 w: widget.data.tabHistoryW || 800, 
                 h: widget.data.tabHistoryH || 600 
             })
+            setCenter(
+                widget.position.x + (widget.data.tabHistoryW || 800) / 2,
+                widget.position.y + (widget.data.tabHistoryH || 600) / 2,
+                { zoom: 1, duration: 300 }
+            )
         }
     }
-
-    const handleSpawnSettings = () => {
-        const id = `settings_widget_${Date.now()}`
-        const viewport = getViewport()
-        const scale = viewport.zoom
         
         const windowWidth = window.innerWidth
         const windowHeight = window.innerHeight
@@ -228,7 +228,7 @@ const CanvasContent = () => {
   }, [nodes, getViewport, updateWidgetData])
 
   return (
-    <div className="w-full h-full relative" onClick={() => setContextMenuOpen(false)} onPointerDown={() => setContextMenuOpen(false)}>
+    <div className="w-full h-full relative">
       
       <ReactFlow
         nodes={nodes}
