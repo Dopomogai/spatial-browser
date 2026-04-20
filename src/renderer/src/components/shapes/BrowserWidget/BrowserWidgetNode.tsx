@@ -285,7 +285,7 @@ const isValidDataUrl = (str: string | undefined): boolean => {
               const newNode = {
                   id,
                   type: 'browser_widget', 
-                position: { x: (positionX || 0) + 50, y: (positionY || 0) + 50 },
+                position: { x: (positionX || 0) + 20, y: (positionY || 0) + 20 },
                   data: {
                     ...widget,
                     id: undefined, // ensure duplicate does not carry same ID in local block logic
