@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Tldraw, useEditor, createShapeId } from 'tldraw'
+import { Plus } from 'lucide-react'
 import 'tldraw/tldraw.css'
 import { BrowserWidgetShapeUtil } from '../shapes/BrowserWidget/BrowserWidgetShapeUtil'
 import { CanvasesWidgetShapeUtil } from '../shapes/CanvasesWidget/CanvasesWidgetShapeUtil'
@@ -159,7 +160,8 @@ export const SpatialCanvas: React.FC = () => {
               ))}
           </select>
           <button onClick={() => {
-              const name = prompt('Enter profile name:')
+              // Temporary V1 fix: prompt is not supported in electron
+              const name = `Canvas_${Math.floor(Math.random() * 1000)}`
               if (name) saveProfileAs(name)
           }} style={{ background: '#333', padding: '4px 8px', borderRadius: '4px' }}>Save As</button>
           <button onClick={() => deleteProfile(currentProfileId)} disabled={currentProfileId === 'default'} style={{ background: '#533', padding: '4px 8px', borderRadius: '4px', opacity: currentProfileId === 'default' ? 0.5 : 1 }}>Delete</button>

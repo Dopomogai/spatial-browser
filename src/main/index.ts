@@ -70,10 +70,12 @@ function createWindow(): void {
     titleBarStyle: 'hiddenInset', // Mac-native UX
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
-      // Bypass sandbox for root execution in agent dev environment
+      // Important: webSecurity must be explicitly true for production. 
+      // V1 uses false solely for local sandboxed agent debugging of CORS-hostile websites,
+      // but it throws warnings via Chromium natively.
       sandbox: false,
       webviewTag: true,
-      webSecurity: false,
+      webSecurity: false, 
       contextIsolation: true
     }
   })

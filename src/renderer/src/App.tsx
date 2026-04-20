@@ -17,6 +17,9 @@ function App() {
 
     // Listen for Cmd+K and Spacebar
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        window.dispatchEvent(new CustomEvent('shift-state-change', { detail: { held: true } }))
+      }
       // Toggle Topbar visibility via Cmd+Shift+B
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'b') {
          e.preventDefault()
@@ -32,6 +35,9 @@ function App() {
     }
 
     const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        window.dispatchEvent(new CustomEvent('shift-state-change', { detail: { held: false } }))
+      }
       if (e.code === 'Space') {
         setSpacebarHeld(false)
       }
