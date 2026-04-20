@@ -171,6 +171,9 @@ const isValidDataUrl = (str: string | undefined): boolean => {
 
   const expandWidget = () => {
       // Grab height from history so it restores fully (minus min bound safety)
+      if (widget._preFullscreenX !== undefined && widget._preFullscreenY !== undefined) {
+         setNodes(nds => nds.map(n => n.id === id ? { ...n, position: { x: widget._preFullscreenX, y: widget._preFullscreenY } } : n));
+      }
       updateWidgetData(id, { 
           interactionState: 'active', 
           w: Math.max(widget.tabHistoryW || 800, 300), 
@@ -240,8 +243,8 @@ const isValidDataUrl = (str: string | undefined): boolean => {
           <button 
             type="button"
             onClick={() => {
-              updateWidgetData(id, { interactionState: 'active', w: window.innerWidth, h: window.innerHeight, tabHistoryW: currentW, tabHistoryH: currentH })
-              window.dispatchEvent(new CustomEvent('fullscreen-toggled-client', { detail: { tabId: id, isFullScreen: true } }));
+              useCanvasStore.getState().toggleFullscreen(id);
+              window.electron?.ipcRenderer?.send('toggle-fullscreen');
             }} 
             className="w-3 h-3 rounded-full bg-[#34c759] hover:opacity-80 flex items-center justify-center text-black font-bold"
           ></button>

@@ -18,6 +18,8 @@ export interface BrowserWidgetData extends Record<string, unknown> {
   h: number
   tabHistoryW?: number
   tabHistoryH?: number
+  _preFullscreenX?: number
+  _preFullscreenY?: number
   interactionState: WidgetState
   lastActive: number
   tabHistory: string[]
@@ -77,6 +79,7 @@ export interface CanvasStore {
   addWidget: (url: string, x: number, y: number) => void
   addTextNode: (x: number, y: number) => void
   updateWidgetData: (id: string, dataUpdates: Partial<BrowserWidgetData & TextNodeData>) => void
+  toggleFullscreen: (id: string) => void
   removeWidget: (id: string) => void
   
   undo: () => void
@@ -219,6 +222,33 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       persistState({ ...state, ...newState })
       return newState
     })
+  },
+
+  toggleFullscreen: (id) => {
+    set((state) => {
+      const newNodes = state.nodes.map((node) => {
+        if (node.id === id) {
+          return {
+            ...node,
+            position: { x: 0, y: 0 },
+            data: {
+              ...node.data,
+              w: window.innerWidth,
+              h: window.innerHeight,
+              tabHistoryW: node.data.w,
+              tabHistoryH: node.data.h,
+              _preFullscreenX: node.position.x,
+              _preFullscreenY: node.position.y
+            }
+          } as AppNode;
+        }
+        return node;
+      });
+      const newUndoStack = [...state.undoStack, state.nodes].slice(-50);
+      const newState = { nodes: newNodes, undoStack: newUndoStack };
+      persistState({ ...state, ...newState });
+      return newState;
+    });
   },
 
   updateWidgetData: (id, dataUpdates) => {
