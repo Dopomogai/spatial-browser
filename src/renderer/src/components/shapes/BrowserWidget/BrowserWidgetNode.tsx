@@ -85,36 +85,16 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
     const handleDomReadyExecution = () => {
       handleDomReady()
       checkHistoryStates()
-      webview.executeJavaScript(`
-        window.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          
-          let href = '';
-          let src = '';
-          let text = window.getSelection().toString();
-          
-          // Traverse up to find a link if we didn't click directly on the <a>
-          let el = e.target;
-          while (el && el !== document.body) {
-            if (el.tagName === 'A' && el.href) {
-                href = el.href;
-                break;
-            }
-            if (el.tagName === 'IMG' && el.src) {
-                src = el.src;
-            }
-            el = el.parentElement;
-          }
+    }
 
-          window.electron?.ipcRenderer?.send?.('show-webview-context-menu', {
-             x: e.x, 
-             y: e.y, 
-             linkURL: href, 
-             srcURL: src,
-             selectionText: text
-          });
+    const handleContextMenu = (e: any) => {
+        window.electron?.ipcRenderer?.send?.('show-webview-context-menu', {
+             x: e.params.x, 
+             y: e.params.y, 
+             linkURL: e.params.linkURL, 
+             srcURL: e.params.srcURL,
+             selectionText: e.params.selectionText
         });
-      `)
     }
 
     webview.addEventListener('did-start-loading', checkHistoryStates)
@@ -122,6 +102,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
     webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage)
     webview.addEventListener('page-title-updated', handlePageTitleUpdated)
     webview.addEventListener('dom-ready', handleDomReadyExecution)
+    webview.addEventListener('context-menu', handleContextMenu)
 
     return () => {
       isMounted = false;
@@ -130,6 +111,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
       webview.removeEventListener('did-navigate-in-page', handleDidNavigateInPage)
       webview.removeEventListener('page-title-updated', handlePageTitleUpdated)
       webview.removeEventListener('dom-ready', handleDomReadyExecution)
+      webview.removeEventListener('context-menu', handleContextMenu)
     }
   }, [id, widget.url])
   // Screenshot logic remains identical, caching visuals to DB/Store
