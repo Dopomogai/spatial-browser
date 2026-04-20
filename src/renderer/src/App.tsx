@@ -53,10 +53,12 @@ function App() {
       }
     }
 
+    const handleIpcShiftState = (_event: any, isHeld: boolean) => {
+        window.dispatchEvent(new CustomEvent('shift-state-change', { detail: { held: isHeld } }));
+    };
+
     if (window.electron?.ipcRenderer) {
-        window.electron.ipcRenderer.on('shift-state-change', (_event, isHeld) => {
-            window.dispatchEvent(new CustomEvent('shift-state-change', { detail: { held: isHeld } }));
-        });
+        window.electron.ipcRenderer.on('shift-state-change', handleIpcShiftState);
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -66,7 +68,7 @@ function App() {
       window.removeEventListener('keyup', handleKeyUp)
       window.removeEventListener('open-new-profile-modal', handleProfileModalOpen)
       if (window.electron?.ipcRenderer) {
-          window.electron.ipcRenderer.removeAllListeners('shift-state-change')
+          window.electron.ipcRenderer.removeListener?.('shift-state-change', handleIpcShiftState)
       }
     }
   }, [])
