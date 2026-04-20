@@ -167,13 +167,8 @@ export const SpatialCanvas: React.FC = () => {
       };
 
       const handleSpawnCenter = () => {
-          const editor = useCanvasStore.getState().editor;
-          if (editor) {
-              const bounds = editor.getViewportPageBounds();
-              useCanvasStore.getState().setOmnibarOpen(true, { x: bounds.midX, y: bounds.midY });
-          } else {
-              useCanvasStore.getState().setOmnibarOpen(true, { x: 0, y: 0 });
-          }
+          // This dispatch doesn't pass coordinates because it implies "Center of the Screen"
+          useCanvasStore.getState().setOmnibarOpen(true, null);
       };
 
       const handlePanToWidget = (e: any) => {
@@ -293,7 +288,10 @@ export const SpatialCanvas: React.FC = () => {
                       const point = { x: contextMenuPos.x, y: contextMenuPos.y }
                       const canvasPoint = editor.screenToPage(point)
                       
-                      useCanvasStore.getState().setOmnibarOpen(true, { x: canvasPoint.x, y: canvasPoint.y })
+                      // BUG FIX: The Omnibar isn't a TLDraw component, it's a React overlay floating on top of the wrapper.
+                      // Passing canvas specific coordinates breaks it, hiding it thousands of pixels offscreen or crushing it.
+                      // Always pass the raw screen position so it floats exactly where the context menu spawned.
+                      useCanvasStore.getState().setOmnibarOpen(true, { x: contextMenuPos.x, y: contextMenuPos.y })
                   }}
                   className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex items-center gap-2"
                 >

@@ -52,11 +52,12 @@ export const Omnibar: React.FC = () => {
     let centerX = 0
     let centerY = 0
     
-    if (omnibarPosition) {
+    if (omnibarPosition && editor) {
+        // Omnibar Position is in raw Screen coordinates, but widgets need to be spawned in Canvas coordinates
         const pagePos = editor.screenToPage({ x: omnibarPosition.x, y: omnibarPosition.y })
         centerX = pagePos.x
         centerY = pagePos.y
-    } else {
+    } else if (editor) {
         const bounds = editor.getViewportPageBounds()
         centerX = bounds.x + bounds.w / 2 - 400 // half of default widget width
         centerY = bounds.y + bounds.h / 2 - 300 // half of default widget height
@@ -69,7 +70,7 @@ export const Omnibar: React.FC = () => {
   // Calculate style based on whether omnibarPosition is set
   const containerStyle: React.CSSProperties = omnibarPosition ? {
       position: 'absolute',
-      top: 0,
+      top: 0, // This logic is wrong when inside TLDraw canvas coords
       left: 0,
       transform: `translate(${omnibarPosition.x}px, ${omnibarPosition.y}px)`,
       zIndex: 1000,
