@@ -16,7 +16,7 @@ const Section = ({ title, icon: Icon, active, onClick }: any) => (
 
 export const SettingsWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
   const [activeTab, setActiveTab] = useState('general')
-  const { theme, setTheme } = useCanvasStore()
+  const { theme, setTheme, defaultTabWidth, defaultTabHeight, setDefaultTabSize } = useCanvasStore()
 
   return (
     <HTMLContainer
@@ -95,6 +95,37 @@ export const SettingsWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => 
                   <option>Perplexity</option>
                 </select>
               </div>
+
+              <div className="space-y-3 mt-6 border-t border-white/5 pt-4">
+                <div className="text-white text-sm font-medium">Default Tab Size</div>
+                <div className="text-on_surface_variant text-[11px] mb-2">Configure dimensions when spawning a new tab.</div>
+                
+                <div className="flex gap-3">
+                  <div className="flex flex-col flex-1 gap-1">
+                    <label className="text-xs text-on_surface_variant ml-1">Width</label>
+                    <input 
+                      type="number"
+                      min={300}
+                      max={3000}
+                      value={defaultTabWidth}
+                      onChange={(e) => setDefaultTabSize(Number(e.target.value) || 300, defaultTabHeight)}
+                      className="w-full bg-surface_container_lowest border border-white/10 rounded-lg p-2 text-white text-sm outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col flex-1 gap-1">
+                    <label className="text-xs text-on_surface_variant ml-1">Height</label>
+                    <input 
+                      type="number"
+                      min={200}
+                      max={3000}
+                      value={defaultTabHeight}
+                      onChange={(e) => setDefaultTabSize(defaultTabWidth, Number(e.target.value) || 200)}
+                      className="w-full bg-surface_container_lowest border border-white/10 rounded-lg p-2 text-white text-sm outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="text-red-500 text-xs font-semibold mt-2">Coming Soon (Phase 2)</div>
             </div>
           </div>

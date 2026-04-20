@@ -3,14 +3,16 @@ import { ReactFlow, Background, MiniMap, Controls, useReactFlow, ReactFlowProvid
 import type { NodeTypes } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { BrowserWidgetNode } from '../shapes/BrowserWidget/BrowserWidgetNode'
+import { TextNodeComponent } from '../shapes/TextNode/TextNodeComponent'
 import { useCanvasStore } from '../../store/useCanvasStore'
 import type { AppNode } from '../../store/useCanvasStore'
-import { Plus, Maximize } from 'lucide-react'
+import { Plus, Maximize, Type } from 'lucide-react'
 import { Omnibar } from '../ui/Omnibar'
 
 // Define our completely custom node components to inject into ReactFlow
 const nodeTypes: NodeTypes = {
   browser_widget: BrowserWidgetNode,
+  text_node: TextNodeComponent,
 //  canvases_widget: CanvasesWidgetNode,
 //  settings_widget: SettingsWidgetNode,
 }
@@ -50,6 +52,20 @@ const CanvasContent = () => {
   useEffect(() => {
     const handleSpawnCenter = () => {
       setOmnibarOpen(true, null) // Allows falling back to standard center without an exact flow Pos
+    }
+    const handleSpawnTextNodeCenter = () => {
+      const viewport = getViewport()
+      const scale = viewport.zoom
+      
+      const windowWidth = window.innerWidth
+      const windowHeight = window.innerHeight
+      const centerXV = windowWidth / 2
+      const centerYV = windowHeight / 2
+      
+      const visibleX = (centerXV - viewport.x) / scale
+      const visibleY = (centerYV - viewport.y) / scale
+      
+      useCanvasStore.getState().addTextNode(visibleX, visibleY)
     }
     const handlePanToWidget = (e: any) => {
         try {
@@ -172,6 +188,7 @@ const CanvasContent = () => {
     }
 
     window.addEventListener('spawn-tab-center', handleSpawnCenter)
+    window.addEventListener('spawn-text-node-center', handleSpawnTextNodeCenter)
     window.addEventListener('spawn-settings-widget', handleSpawnSettings)
     window.addEventListener('spawn-canvases-widget', handleSpawnCanvases)
     window.addEventListener('pan-to-widget' as any, handlePanToWidget)
@@ -179,6 +196,7 @@ const CanvasContent = () => {
 
     return () => {
       window.removeEventListener('spawn-tab-center', handleSpawnCenter)
+      window.removeEventListener('spawn-text-node-center', handleSpawnTextNodeCenter)
       window.removeEventListener('spawn-settings-widget', handleSpawnSettings)
       window.removeEventListener('spawn-canvases-widget', handleSpawnCanvases)
       window.removeEventListener('pan-to-widget' as any, handlePanToWidget)
@@ -298,7 +316,16 @@ const CanvasContent = () => {
                 }}
                 className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex flex-row items-center gap-2"
               >
-                  {Plus ? <Plus size={14} /> : '+'} Spawn Tab Here
+                  <Plus size={14} /> Spawn Tab Here
+              </button>
+              <button 
+                onClick={() => {
+                    setContextMenuOpen(false)
+                    useCanvasStore.getState().addTextNode(contextMenuPos.x, contextMenuPos.y)
+                }}
+                className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex flex-row items-center gap-2"
+              >
+                  <Type size={14} /> Add Text Note
               </button>
               <div className="w-full h-px bg-white/5 my-1"></div>
               <button 

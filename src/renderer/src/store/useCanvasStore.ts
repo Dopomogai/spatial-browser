@@ -24,8 +24,19 @@ export interface BrowserWidgetData extends Record<string, unknown> {
   currentHistoryIndex: number
 }
 
+export interface TextNodeData extends Record<string, unknown> {
+  url?: string;
+  title?: string;
+  text: string;
+  w: number;
+  h: number;
+  interactionState: WidgetState;
+}
+
 // React Flow strictly separates geometric math (Node) from business logic (data)
-export type AppNode = Node<BrowserWidgetData, 'browser_widget'>;
+export type BrowserAppNode = Node<BrowserWidgetData, 'browser_widget'>;
+export type TextAppNode = Node<TextNodeData, 'text_node'>;
+export type AppNode = BrowserAppNode | TextAppNode;
 
 export interface WorkspaceProfile {
   id: string
@@ -51,16 +62,21 @@ export interface CanvasStore {
   isSpacebarHeld: boolean
   omnibarPosition: { x: number; y: number } | null
 
-  // Theme State
-  theme: 'light' | 'dark'
-  setTheme: (theme: 'light' | 'dark') => void
+ // Theme State
+ theme: 'light' | 'dark'
+ setTheme: (theme: 'light' | 'dark') => void
+ // Default Tab Size State
+ defaultTabWidth: number
+ defaultTabHeight: number
+ setDefaultTabSize: (width: number, height: number) => void
 
   // Application Actions
   isTopTabBarVisible: boolean
   setTopTabBarVisible: (visible: boolean) => void
   
   addWidget: (url: string, x: number, y: number) => void
-  updateWidgetData: (id: string, dataUpdates: Partial<BrowserWidgetData>) => void
+  addTextNode: (x: number, y: number) => void
+  updateWidgetData: (id: string, dataUpdates: Partial<BrowserWidgetData & TextNodeData>) => void
   removeWidget: (id: string) => void
   
   undo: () => void
@@ -87,8 +103,11 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   isOmnibarOpen: false,
   isTopTabBarVisible: true,
   omnibarPosition: null, // this holds physical canvas coordinates, NOT visual css integers!
-  isSpacebarHeld: false,
+ isSpacebarHeld: false,
   theme: 'dark',
+  defaultTabWidth: 800,
+  defaultTabHeight: 600,
+  setDefaultTabSize: (width, height) => set({ defaultTabWidth: width, defaultTabHeight: height }),
 
   lastViewport: { x: 0, y: 0, zoom: 1 },
 
@@ -146,24 +165,50 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     persistState(get())
   },
 
-  addWidget: (url, x, y) => {
-    const id = `browser_widget_${Date.now()}`
-    
-    const newNode: AppNode = {
-      id,
+ addWidget: (url, x, y) => {
+   const id = `browser_widget_${Date.now()}`
+   
+   const { defaultTabWidth, defaultTabHeight } = get()
+
+   const newNode: AppNode = {
+     id,
       type: 'browser_widget', // Matches nodeTypes in ReactFlow instance
       position: { x, y }, // React flow handles position natively
       data: {
         url,
         title: 'New Tab',
         faviconUrl: '',
-        screenshotBase64: null,
-        w: 800,
-        h: 600,
-        interactionState: 'active',
+       screenshotBase64: null,
+       w: defaultTabWidth,
+       h: defaultTabHeight,
+       interactionState: 'active',
         lastActive: Date.now(),
         tabHistory: [url],
         currentHistoryIndex: 0
+      }
+    }
+    
+    set((state) => {
+      const newNodes = [...state.nodes, newNode]
+      const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
+      const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
+      persistState({ ...state, ...newState })
+      return newState
+    })
+  },
+
+  addTextNode: (x, y) => {
+    const id = `text_node_${Date.now()}`
+    
+    const newNode: AppNode = {
+      id,
+      type: 'text_node',
+      position: { x, y },
+      data: {
+        text: '',
+        w: 300,
+        h: 150,
+        interactionState: 'active'
       }
     }
     
@@ -187,7 +232,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
               ...node.data,
               ...dataUpdates,
             },
-          };
+          } as AppNode;
         }
         return node;
       });
@@ -278,14 +323,16 @@ function persistState(state: CanvasStore) {
         )
     }
 
-    const stateToSave = {
-        nodes: state.nodes,
-        edges: state.edges,
-        profiles: profilesToSave,
-        currentProfileId: state.currentProfileId,
-        theme: state.theme,
-        lastViewport: state.lastViewport
-    }
+   const stateToSave = {
+       nodes: state.nodes,
+       edges: state.edges,
+       profiles: profilesToSave,
+       currentProfileId: state.currentProfileId,
+       theme: state.theme,
+       lastViewport: state.lastViewport,
+       defaultTabWidth: state.defaultTabWidth,
+       defaultTabHeight: state.defaultTabHeight
+   }
 
     // Local persistence (V2 uses new key to avoid clashing with V1 TLDraw store)
     idbSet('spatial-canvas-v2-state', stateToSave).catch(console.error)
