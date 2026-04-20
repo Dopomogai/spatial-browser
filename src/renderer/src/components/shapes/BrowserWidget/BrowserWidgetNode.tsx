@@ -105,23 +105,35 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
 
   // Stable context menu listener that survives navigation
   useEffect(() => {
-    const webview = webviewRef.current
-    if (!webview) return
+    let isSubscribed = false;
+    let cleanupFn = () => {};
 
-    const handleContextMenu = (e: any) => {
-        window.electron?.ipcRenderer?.send?.('show-webview-context-menu', {
-             x: e.params.x, 
-             y: e.params.y, 
-             linkURL: e.params.linkURL, 
-             srcURL: e.params.srcURL,
-             selectionText: e.params.selectionText
-        });
-    }
+    const setupContextMenu = () => {
+      const webview = webviewRef.current;
+      if (!webview || isSubscribed) return;
 
-    webview.addEventListener('context-menu', handleContextMenu)
+      const handleContextMenu = (e: any) => {
+          window.electron?.ipcRenderer?.send?.('show-webview-context-menu', {
+               x: e.params.x, 
+               y: e.params.y, 
+               linkURL: e.params.linkURL, 
+               srcURL: e.params.srcURL,
+               selectionText: e.params.selectionText
+          });
+      }
+
+      webview.addEventListener('context-menu', handleContextMenu);
+      isSubscribed = true;
+      cleanupFn = () => {
+          webview.removeEventListener('context-menu', handleContextMenu);
+      };
+    };
+
+    const interval = setInterval(setupContextMenu, 500);
 
     return () => {
-      webview.removeEventListener('context-menu', handleContextMenu)
+      clearInterval(interval);
+      cleanupFn();
     }
   }, [id])
 

@@ -235,7 +235,7 @@ const CanvasContent = () => {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onPaneContextMenu={onPaneContextMenu}
+        onContextMenu={onPaneContextMenu}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         // Force the background to intercept the mouse pan event ONLY when Space or Shift is held
