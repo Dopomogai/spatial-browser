@@ -107,6 +107,19 @@ const CanvasContent = () => {
         } catch(err) {}
     }
 
+    
+    const handleOpenOmniSearch = () => {
+      const viewport = getViewport()
+      const scale = viewport.zoom
+      const windowWidth = window.innerWidth
+      const windowHeight = window.innerHeight
+      const centerXV = windowWidth / 2
+      const centerYV = windowHeight / 2
+      const visibleX = (centerXV - viewport.x) / scale
+      const visibleY = (centerYV - viewport.y) / scale
+      setOmnibarOpen(true, { x: visibleX, y: visibleY })
+    }
+
     const handleSpawnCanvases = () => {
         const id = `canvases_widget_${Date.now()}`
         const viewport = getViewport()
@@ -206,6 +219,7 @@ const CanvasContent = () => {
     window.addEventListener('spawn-text-node-center', handleSpawnTextNodeCenter)
     window.addEventListener('spawn-settings-widget', handleSpawnSettings)
     window.addEventListener('spawn-canvases-widget', handleSpawnCanvases)
+    window.addEventListener('open-omni-search', handleOpenOmniSearch)
     window.addEventListener('pan-to-widget' as any, handlePanToWidget)
     window.addEventListener('fullscreen-toggled-client', handleFullscreenToggled)
 
@@ -214,6 +228,7 @@ const CanvasContent = () => {
       window.removeEventListener('spawn-text-node-center', handleSpawnTextNodeCenter)
       window.removeEventListener('spawn-settings-widget', handleSpawnSettings)
       window.removeEventListener('spawn-canvases-widget', handleSpawnCanvases)
+      window.removeEventListener('open-omni-search', handleOpenOmniSearch)
       window.removeEventListener('pan-to-widget' as any, handlePanToWidget)
       window.removeEventListener('fullscreen-toggled-client', handleFullscreenToggled)
     }
