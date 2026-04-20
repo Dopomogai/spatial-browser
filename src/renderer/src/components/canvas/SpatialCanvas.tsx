@@ -148,6 +148,7 @@ const CanvasContent = () => {
     }
         
     const handleSpawnSettings = () => {
+        const id = `settings_widget_${Date.now()}`
         const viewport = getViewport()
         const scale = viewport.zoom
         const windowWidth = window.innerWidth
