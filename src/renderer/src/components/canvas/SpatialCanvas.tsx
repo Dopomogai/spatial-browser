@@ -5,7 +5,7 @@ import '@xyflow/react/dist/style.css'
 import { BrowserWidgetNode } from '../shapes/BrowserWidget/BrowserWidgetNode'
 import { useCanvasStore } from '../../store/useCanvasStore'
 import type { AppNode } from '../../store/useCanvasStore'
-import { Plus, MousePointer2 } from 'lucide-react'
+import { Plus, Maximize } from 'lucide-react'
 import { Omnibar } from '../ui/Omnibar'
 
 // Define our completely custom node components to inject into ReactFlow
@@ -38,7 +38,7 @@ const CanvasContent = () => {
 
   const handleContextMenu = (e: React.MouseEvent) => {
     // If the target originated from inside a node, DO NOT open the generic canvas menu
-    if ((e.target as HTMLElement).closest('.react-flow__node')) {
+    if ((e.target as HTMLElement).closest('.react-flow__node') || (e.target as HTMLElement).tagName === 'WEBVIEW') {
         return;
     }
     e.preventDefault()
@@ -206,11 +206,10 @@ const CanvasContent = () => {
               <button 
                 onClick={() => {
                     setContextMenuOpen(false)
-                    // The magic of screenToFlowPosition instead of raw SVG TLDraw hacking!
-                    const flowPos = screenToFlowPosition({ x: contextMenuPos.x, y: contextMenuPos.y })
-                    setOmnibarOpen(true, contextMenuPos) // Keep omnibar on raw Screen X/Y
+                    // Pass the true screen coordinates for the UI Omnibar overlay
+                    setOmnibarOpen(true, contextMenuPos) 
                 }}
-                className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex flex-row items-center gap-2"
               >
                   <Plus size={14} /> Spawn Tab Here
               </button>

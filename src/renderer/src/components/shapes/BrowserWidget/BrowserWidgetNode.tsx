@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
 import { Globe, X, Maximize2, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react'
 import { NodeResizer, useReactFlow } from '@xyflow/react'
@@ -22,6 +22,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
   const [canGoForward, setCanGoForward] = useState(false)
   const [editingUrl, setEditingUrl] = useState('')
   const [isEditing, setIsEditing] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
   const { setNodes } = useReactFlow() // Natively resize nodes
 
   // Hardware controls listening
@@ -38,7 +39,10 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
     const webview = webviewRef.current
 
     const handleDomReady = () => setIsReady(true)
-    const handleContextMenu = (e: any) => e.preventDefault()
+    const handleContextMenu = (e: any) => {
+        // Prevent default double menu, but let us send IPC signal to main window menu if needed later.
+        e.preventDefault() 
+    }
 
     const handleDidNavigate = (e: any) => {
       if (e.url !== widget.url) {
@@ -69,7 +73,40 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
     webview.addEventListener('did-navigate', handleDidNavigate)
     webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage)
     webview.addEventListener('page-title-updated', handlePageTitleUpdated)
-    webview.addEventListener('dom-ready', handleDomReady)
+    // Inject window.ipcRenderer hook for context menu forwarding properly
+    webview.addEventListener('dom-ready', () => {
+      handleDomReady()
+      webview.executeJavaScript(`
+        window.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          
+          let href = '';
+          let src = '';
+          let text = window.getSelection().toString();
+          
+          // Traverse up to find a link if we didn't click directly on the <a>
+          let el = e.target;
+          while (el && el !== document.body) {
+            if (el.tagName === 'A' && el.href) {
+                href = el.href;
+                break;
+            }
+            if (el.tagName === 'IMG' && el.src) {
+                src = el.src;
+            }
+            el = el.parentElement;
+          }
+
+          window.ipcRenderer.send('webview-context-menu', {
+             x: e.x, 
+             y: e.y, 
+             linkURL: href, 
+             srcURL: src,
+             selectionText: text
+          });
+        });
+      `)
+    })
     webview.addEventListener('context-menu', handleContextMenu)
 
     return () => {
@@ -145,11 +182,12 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
   return (
     <>
     <NodeResizer 
-        isVisible={widget.interactionState === 'active'} 
+        isVisible={widget.interactionState === 'active' && isHovered} 
         minWidth={300} 
         minHeight={200}
-        handleStyle={{ width: 8, height: 8, borderRadius: 4, visibility: 'hidden' }} // Make the handles permanently invisible
-        lineStyle={{ borderWidth: 4, borderColor: 'transparent' }} // Make the lines transparent but thick enough to grab
+        handleStyle={{ width: 12, height: 12, borderRadius: 0, background: 'transparent', border: 'none' }} 
+        handleClassName="custom-resizer-handle"
+        lineStyle={{ borderWidth: 6, borderColor: 'transparent' }} 
         onResize={(e, params) => {
             updateWidgetData(id, { w: params.width, h: params.height })
         }} 
@@ -158,9 +196,11 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
          style={{ width: widget.w, height: widget.h }}
          onClick={(e) => e.stopPropagation()} // Prevents clicking the node from passing into the canvas background
          onPointerDown={(e) => e.stopPropagation()}
+         onMouseEnter={() => setIsHovered(true)}
+         onMouseLeave={() => setIsHovered(false)}
     >
       
-      <div className={`h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4 justify-between transition-transform duration-300 transform z-20 absolute top-0 w-full
+      <div className={`h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4 justify-between transition-transform duration-300 transform z-20 absolute top-0 w-full custom-drag-handle
         ${widget.interactionState === 'active' ? 'translate-y-0 opacity-100 group-hover:translate-y-0 group-hover:opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
         
         <div className="flex items-center gap-2">

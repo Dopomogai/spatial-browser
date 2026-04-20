@@ -11,6 +11,8 @@ export const TopTabBar: React.FC = () => {
     const removeWidget = useCanvasStore(state => state.removeWidget)
     const undo = useCanvasStore(state => state.undo)
     const redo = useCanvasStore(state => state.redo)
+    const undoStack = useCanvasStore(state => state.undoStack)
+    const redoStack = useCanvasStore(state => state.redoStack)
     const [updater, setUpdater] = useState(0)
 
     // Force re-render when store updates specifically for top bar 
@@ -176,10 +178,10 @@ export const TopTabBar: React.FC = () => {
 
             {/* Right Controls: Undo / Redo */}
             <div className="flex items-center gap-2 pl-4 ml-4 border-l border-white/5 h-6">
-                <button onClick={undo} className="text-on_surface_variant hover:text-white transition-colors" title="Undo Canvas Action">
+                <button onClick={undo} disabled={undoStack.length === 0} className={`transition-colors ${undoStack.length === 0 ? 'text-on_surface_variant/30 cursor-not-allowed' : 'text-on_surface_variant hover:text-white'}`} title="Undo Canvas Action">
                     <Undo size={16} />
                 </button>
-                <button onClick={redo} className="text-on_surface_variant hover:text-white transition-colors" title="Redo Canvas Action">
+                <button onClick={redo} disabled={redoStack.length === 0} className={`transition-colors ${redoStack.length === 0 ? 'text-on_surface_variant/30 cursor-not-allowed' : 'text-on_surface_variant hover:text-white'}`} title="Redo Canvas Action">
                     <Redo size={16} />
                 </button>
             </div>

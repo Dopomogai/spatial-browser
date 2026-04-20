@@ -35,17 +35,19 @@ app.on('web-contents-created', (event, contents) => {
         { label: 'Select All', role: 'selectAll', enabled: params.editFlags.canSelectAll },
         { type: 'separator' },
         { 
-          label: 'Spawn Tab Here', 
+          label: 'Spawn Empty Tab Here', 
           click: () => {
              if (mainWindow) mainWindow.webContents.send('spawn-tab-center')
           }
-        },
+        }
       ])
       
       if (mainWindow) {
-         menu.popup({ window: mainWindow })
+         menu.popup({ window: mainWindow || undefined })
       }
     });
+  }
+})
 
     contents.setWindowOpenHandler(({ url }) => {
         if (mainWindow) {

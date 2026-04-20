@@ -35,7 +35,7 @@ export const Omnibar: React.FC = () => {
 
     let finalUrl = url.trim()
     // More robust regex to catch "google.com", "localhost:3000", "192.168.1.1", etc.
-    const domainRegex = /^(https?:\/\/)?((([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})|(localhost)|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))(:\d+)?(\/.*)?$/;
+    const domainRegex = /^(https?:\/\/)?((([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})|(localhost)|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))(:\d+)?(\/.*)?$/i;
     
     if (domainRegex.test(finalUrl)) {
       if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
