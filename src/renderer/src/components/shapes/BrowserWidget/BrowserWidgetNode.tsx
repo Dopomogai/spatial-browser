@@ -100,7 +100,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
             el = el.parentElement;
           }
 
-          window.electron.ipcRenderer.send('show-webview-context-menu', {
+          window.electron?.ipcRenderer?.send?.('show-webview-context-menu', {
              x: e.x, 
              y: e.y, 
              linkURL: href, 

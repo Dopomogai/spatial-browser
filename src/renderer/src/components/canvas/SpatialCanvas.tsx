@@ -192,7 +192,7 @@ const CanvasContent = () => {
   }, [nodes, getViewport, updateWidgetData])
 
   return (
-    <div className="w-full h-full relative" onClick={() => setContextMenuOpen(false)} onPointerDown={() => setContextMenuOpen(false)}>
+    <div className="w-full h-full relative" onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }} onClick={() => setContextMenuOpen(false)} onPointerDown={() => setContextMenuOpen(false)}>
       
       <ReactFlow
         nodes={nodes}
