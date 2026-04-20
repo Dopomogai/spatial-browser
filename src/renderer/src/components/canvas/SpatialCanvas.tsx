@@ -99,12 +99,33 @@ const CanvasContent = () => {
     }
 
     const handleFullscreenToggled = (_e: any, { tabId, isFullScreen }: { tabId: string, isFullScreen: boolean }) => {
+        const widget = nodes.find(n => n.id === tabId)
+        if (!widget) return;
+        
         if (isFullScreen) {
-            updateWidgetData(tabId, { interactionState: 'active', w: window.innerWidth, h: window.innerHeight })
-            const widget = nodes.find(n => n.id === tabId)
-            if (widget) {
-                setCenter(widget.position.x + (window.innerWidth / 2), widget.position.y + (window.innerHeight / 2), { zoom: 1, duration: 300 })
-            }
+            updateWidgetData(tabId, { 
+                interactionState: 'active', 
+                w: window.innerWidth, 
+                h: window.innerHeight,
+                tabHistoryW: widget.data.w,
+                tabHistoryH: widget.data.h
+            })
+            // setCenter takes x,y of the exact point to focus on, and zoom.
+            // When putting the tab center at widget.x + w/2 and widget.y + h/2, with zoom 1, 
+            // the innerWidth and innerHeight of the browser matches the widget size exactly,
+            // so it naturally frames it perfectly.
+            setCenter(
+                widget.position.x + (window.innerWidth / 2), 
+                widget.position.y + (window.innerHeight / 2), 
+                { zoom: 1, duration: 300 }
+            )
+        } else {
+            // Restore previous sizing if available
+            updateWidgetData(tabId, { 
+                interactionState: 'active', 
+                w: widget.data.tabHistoryW || 800, 
+                h: widget.data.tabHistoryH || 600 
+            })
         }
     }
 
