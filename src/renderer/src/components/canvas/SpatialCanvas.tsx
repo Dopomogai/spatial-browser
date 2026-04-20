@@ -255,7 +255,7 @@ export const SpatialCanvas: React.FC = () => {
                           return;
                       }
 
-                      const point = editor.windowToScreen({ x: contextMenuPos.x, y: contextMenuPos.y })
+                      const point = { x: contextMenuPos.x, y: contextMenuPos.y }
                       const canvasPoint = editor.screenToPage(point)
                       
                       useCanvasStore.getState().setOmnibarOpen(true, { x: canvasPoint.x, y: canvasPoint.y })

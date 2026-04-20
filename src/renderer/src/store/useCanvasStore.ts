@@ -1,7 +1,7 @@
 declare const supabase: any;
 
 import { create } from 'zustand'
-import { set, get } from 'idb-keyval'
+import { set as idbSet, get as idbGet } from 'idb-keyval'
 
 export type WidgetState = 'active' | 'sleeping' | 'minimized'
 
@@ -88,7 +88,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       currentHistoryIndex: 0
     }
     
-    setStore((state) => {
+    set((state: CanvasStore) => {
       const newWidgets = { ...state.widgets, [id]: newWidget }
       persistState(newWidgets)
       return { widgets: newWidgets }
@@ -96,7 +96,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   updateWidget: (id, updates) => {
-    setStore((state) => {
+    set((state: CanvasStore) => {
       if (!state.widgets[id]) return state
       
       const oldState = {} as Partial<SpatialWidget>
@@ -127,7 +127,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   removeWidget: (id) => {
-    setStore((state) => {
+    set((state: CanvasStore) => {
       const newWidgets = { ...state.widgets }
       delete newWidgets[id]
       persistState(newWidgets)
@@ -135,15 +135,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
   },
 
-  setOmnibarOpen: (open, position = null) => setStore({ isOmnibarOpen: open, omnibarPosition: position }),
+  setOmnibarOpen: (open, position = null) => set({ isOmnibarOpen: open, omnibarPosition: position }),
   
-  setSpacebarHeld: (held) => setStore({ isSpacebarHeld: held }),
+  setSpacebarHeld: (held) => set({ isSpacebarHeld: held }),
 
   loadInitialState: async () => {
     try {
-      const stored = await get<CanvasStore>('spatial-canvas-state')
+      const stored = await idbGet<CanvasStore>('spatial-canvas-state')
       if (stored) {
-        setStore({ ...stored, isOmnibarOpen: false, omnibarPosition: null })
+        set({ ...stored, isOmnibarOpen: false, omnibarPosition: null } as any)
       }
     } catch (e) {
       console.error('Failed to load local DB', e)
@@ -151,7 +151,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   loadProfile: (profileId: string) => {
-      setStore((state) => {
+      set((state: CanvasStore) => {
           const profile = state.profiles.find(p => p.id === profileId)
           if (!profile) return state
           
@@ -168,7 +168,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   saveProfileAs: (name: string) => {
-      setStore((state) => {
+      set((state: CanvasStore) => {
           const id = `profile_${Date.now()}`
           const newProfile: WorkspaceProfile = {
               id,
@@ -187,7 +187,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   deleteProfile: (profileId: string) => {
-      setStore((state) => {
+      set((state: CanvasStore) => {
           if (profileId === 'default' || state.profiles.length === 1) return state // cannot delete last profile or default
           
           const newProfiles = state.profiles.filter(p => p.id !== profileId)
@@ -206,7 +206,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   undo: () => {
-      setStore((state) => {
+      set((state: CanvasStore) => {
           if (state.undoStack.length === 0) return state
 
           const lastAction = state.undoStack[state.undoStack.length - 1]
@@ -231,7 +231,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   redo: () => {
-      setStore((state) => {
+      set((state: CanvasStore) => {
            if (state.redoStack.length === 0) return state
 
            const nextAction = state.redoStack[state.redoStack.length - 1]
@@ -301,7 +301,7 @@ function persistState(state: Partial<CanvasStore>) {
 
 
     // Local persistence
-    set('spatial-canvas-state', stateToSave).catch(console.error)
+    idbSet('spatial-canvas-state', stateToSave).catch(console.error)
     
     // Remote cloud persistence
     if (state.currentProfileId && typeof supabase !== 'undefined' && supabase) {
