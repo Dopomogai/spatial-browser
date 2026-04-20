@@ -68,7 +68,18 @@ const CanvasContent = () => {
   // Handle global events dispatched from TopTabBar or elsewhere
   useEffect(() => {
     const handleSpawnCenter = () => {
-      setOmnibarOpen(true, null) // Allows falling back to standard center without an exact flow Pos
+      const viewport = getViewport()
+      const scale = viewport.zoom
+      
+      const windowWidth = window.innerWidth
+      const windowHeight = window.innerHeight
+      const centerXV = windowWidth / 2
+      const centerYV = windowHeight / 2
+      
+      const visibleX = (centerXV - viewport.x) / scale
+      const visibleY = (centerYV - viewport.y) / scale
+      
+      useCanvasStore.getState().addWidget('about:blank', visibleX, visibleY)
     }
     const handleSpawnTextNodeCenter = () => {
       const viewport = getViewport()

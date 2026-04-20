@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useCanvasStore } from '../store/useCanvasStore'
-import { Settings, History, Search } from 'lucide-react'
+import { Settings, History, Search, Plus } from 'lucide-react'
 
 export const TopTabBar: React.FC = () => {
     // Only subscribe to the specific parts of the store we need
@@ -19,6 +19,16 @@ export const TopTabBar: React.FC = () => {
         <div className="absolute top-4 right-4 h-12 bg-surface/70 backdrop-blur-md rounded-full border border-outline_variant/20 flex items-center px-4 z-50 shadow-md">
             
             <div className="flex items-center gap-2 h-6">
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('spawn-tab-center'))}
+                  className="text-on_surface_variant hover:text-white transition-colors p-2 rounded-full hover:bg-surface_container_highest"
+                  title="Add Tab / Spawn"
+                >
+                    <Plus size={18} />
+                </button>
+                
+                <div className="w-[1px] h-4 bg-outline_variant/30 mx-1"></div>
+
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('open-omni-search'))}
                   className="text-on_surface_variant hover:text-white transition-colors p-2 rounded-full hover:bg-surface_container_highest"
