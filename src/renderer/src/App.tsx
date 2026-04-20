@@ -53,12 +53,21 @@ function App() {
       }
     }
 
+    if (window.electron?.ipcRenderer) {
+        window.electron.ipcRenderer.on('shift-state-change', (_event, isHeld) => {
+            window.dispatchEvent(new CustomEvent('shift-state-change', { detail: { held: isHeld } }));
+        });
+    }
+
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
       window.removeEventListener('open-new-profile-modal', handleProfileModalOpen)
+      if (window.electron?.ipcRenderer) {
+          window.electron.ipcRenderer.removeAllListeners('shift-state-change')
+      }
     }
   }, [])
 

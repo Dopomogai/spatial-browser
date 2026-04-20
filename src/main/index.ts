@@ -21,6 +21,15 @@ function setupWebSocketServer() {
 
   // Hardened WebView isolation
 app.on('web-contents-created', (event, contents) => {
+  contents.on('before-input-event', (event, input) => {
+    if (input.key === 'Shift') {
+      const isHeld = input.type === 'keyDown'
+      if (mainWindow) {
+        mainWindow.webContents.send('shift-state-change', isHeld)
+      }
+    }
+  })
+
   if (contents.getType() === 'webview') {
     // Intercept native Webview right-clicks and explicitly ask Electron to pop a basic text-editing menu
     // This provides native copy/paste without breaking React layer clicks
