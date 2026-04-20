@@ -8,6 +8,9 @@ app.commandLine.appendSwitch('remote-debugging-port', '9222')
 app.commandLine.appendSwitch('no-sandbox')
 app.commandLine.appendSwitch('disable-gpu')
 
+// Suppress dev security warnings
+process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
+
 let mainWindow: BrowserWindow | null = null
 
 // Setup WebSocket server for V2 AI Backend

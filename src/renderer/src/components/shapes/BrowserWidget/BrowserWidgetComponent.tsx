@@ -138,15 +138,21 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
 
   // When waking from sleep, URL might not be properly populated when restoring, so update webview
   useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
     if (widget?.interactionState === 'active' && webviewRef.current && isReady) {
       if (webviewRef.current.getURL) {
-        // Only load if the current webview URL does not match actual expected widget URL
-        const currentWebviewUrl = webviewRef.current.getURL();
-        if (currentWebviewUrl && currentWebviewUrl !== widget.url && currentWebviewUrl !== '') {
-            webviewRef.current.loadURL(widget.url);
-        }
+        timeout = setTimeout(() => {
+          if (!webviewRef.current) return;
+          try {
+            const currentWebviewUrl = webviewRef.current.getURL();
+            if (currentWebviewUrl && currentWebviewUrl !== widget.url && currentWebviewUrl !== '') {
+                webviewRef.current.loadURL(widget.url);
+            }
+          } catch(e) {}
+        }, 100);
       }
     }
+    return () => { if(timeout) clearTimeout(timeout) }
   }, [widget?.interactionState, widget?.url, isReady])
 
   if (!widget) return null
@@ -166,9 +172,8 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       <div 
         className={`h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4 justify-between transition-transform duration-300 transform z-20 absolute top-0 w-full
         ${widget.interactionState === 'active' ? 'translate-y-0 opacity-100 group-hover:translate-y-0 group-hover:opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}
-        onPointerDown={handlePointerDown}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" onPointerDown={handlePointerDown}>
           {/* Mac window controls */}
           <button onClick={() => { removeWidget(widget.id); editor.deleteShape(shape.id) }} className="w-3 h-3 rounded-full bg-error hover:opacity-80"></button>
           <button 
@@ -182,7 +187,7 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
         </div>
         
         {/* Back and Forward Controls */}
-        <div className="flex gap-2 ml-4 text-on-surface-variant flex-shrink-0 border-l border-white/5 pl-4">
+        <div className="flex gap-2 ml-4 text-on-surface-variant flex-shrink-0 border-l border-white/5 pl-4" onPointerDown={handlePointerDown}>
           <button onClick={() => { if(canGoBack) webviewRef.current?.goBack() }} disabled={!canGoBack} className={`hover:text-white transition-colors p-1 rounded hover:bg-white/10 ${!canGoBack && 'opacity-30 cursor-not-allowed'}`}>
             <ChevronLeft size={16} />
           </button>
@@ -194,7 +199,7 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
           </button>
         </div>
 
-        <div className="flex-1 mx-6 flex justify-center">
+        <div className="flex-1 mx-6 flex justify-center" onPointerDown={handlePointerDown}>
           <div className="bg-surface-container-high px-4 py-1.5 rounded-full text-xs font-mono text-on-surface-variant/80 border border-outline-variant/20 flex items-center gap-2 max-w-sm w-full truncate shadow-inner">
             <Globe size={12} className="opacity-50" />
             <span className="truncate">{widget.url}</span>
@@ -205,7 +210,7 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       </div>
 
       {/* Webview Area */}
-      <div className={`flex-1 w-full bg-white relative ${widget.interactionState === 'active' ? 'mt-12 opacity-100' : 'mt-0 opacity-0 pointer-events-none filter blur-sm'}`}
+      <div className={`flex-1 w-full bg-white relative ${widget.interactionState === 'active' ? 'mt-12 opacity-100' : 'hidden'}`}
            style={{ pointerEvents: widget.interactionState === 'active' ? 'auto' : 'none' }}
       >
         

@@ -129,7 +129,7 @@ const CanvasContent = () => {
   return null
 }
 export const SpatialCanvas: React.FC = () => {
-  const { setOmnibarOpen, undo, redo, profiles, loadProfile, saveProfileAs, deleteProfile, currentProfileId } = useCanvasStore()
+  const { setOmnibarOpen } = useCanvasStore()
   const [contextMenuOpen, setContextMenuOpen] = useState(false)
   const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 })
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -140,6 +140,32 @@ export const SpatialCanvas: React.FC = () => {
 
   // Handle global events dispatched from TopTabBar or elsewhere
   useEffect(() => {
+      const handleSpawnCanvases = () => {
+          const editor = useCanvasStore.getState().editor;
+          if (editor) {
+              const bounds = editor.getViewportPageBounds();
+              editor.createShape({
+                type: 'CanvasesWidget',
+                x: bounds.midX - 180,
+                y: bounds.midY - 240,
+                props: { w: 360, h: 480 }
+              } as any)
+          }
+      };
+
+      const handleSpawnSettings = () => {
+          const editor = useCanvasStore.getState().editor;
+          if (editor) {
+              const bounds = editor.getViewportPageBounds();
+              editor.createShape({
+                type: 'SettingsWidget',
+                x: bounds.midX - 240,
+                y: bounds.midY - 170,
+                props: { w: 480, h: 340 }
+              } as any)
+          }
+      };
+
       const handleSpawnCenter = () => {
           const editor = useCanvasStore.getState().editor;
           if (editor) {
@@ -170,10 +196,14 @@ export const SpatialCanvas: React.FC = () => {
 
       window.addEventListener('spawn-tab-center', handleSpawnCenter);
       window.addEventListener('pan-to-widget' as any, handlePanToWidget);
+      window.addEventListener('spawn-canvases-widget', handleSpawnCanvases);
+      window.addEventListener('spawn-settings-widget', handleSpawnSettings);
 
       return () => {
           window.removeEventListener('spawn-tab-center', handleSpawnCenter);
           window.removeEventListener('pan-to-widget' as any, handlePanToWidget);
+          window.removeEventListener('spawn-canvases-widget', handleSpawnCanvases);
+          window.removeEventListener('spawn-settings-widget', handleSpawnSettings);
       };
   }, []);
 
@@ -215,7 +245,6 @@ export const SpatialCanvas: React.FC = () => {
       */}
       <Tldraw 
         shapeUtils={customShapeUtils}
-        allowedShapeTypes={['browser_widget', 'canvases_widget', 'settings_widget']}
         onMount={(editor) => {
             useCanvasStore.getState().setEditor(editor)
             editor.setCurrentTool('select')

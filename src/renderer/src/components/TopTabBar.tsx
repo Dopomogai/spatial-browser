@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useCanvasStore } from '../store/useCanvasStore'
-import { Plus, X, Globe, Undo, Redo, LayoutGrid, Settings } from 'lucide-react'
+import { Plus, X, Globe, Undo, Redo, LayoutGrid, Settings, History } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
 export const TopTabBar: React.FC = () => {
@@ -30,6 +30,11 @@ export const TopTabBar: React.FC = () => {
 
     const handleDelete = (e: React.MouseEvent, id: string) => {
         e.stopPropagation()
+        const editor = useCanvasStore.getState().editor;
+        if (editor) {
+            const shapeId = `shape:${id}` as any;
+            if (editor.getShape(shapeId)) editor.deleteShape(shapeId);
+        }
         removeWidget(id)
     }
 
@@ -43,7 +48,7 @@ export const TopTabBar: React.FC = () => {
     useEffect(() => {
         const ws = Object.values(widgets);
         // Simple stable sort based on an implied order index, falling back to ID to keep it stable
-        ws.sort((a,b) => (a.order || 0) - (b.order || 0));
+        ws.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
         setSortedWidgets(ws);
     }, [widgets]);
 
@@ -63,6 +68,21 @@ export const TopTabBar: React.FC = () => {
             {/* Left Controls: Settings & Layout Tools */}
         <div className="flex items-center gap-2 pr-4 mr-4 border-r border-white/5 h-6">
                 
+                <button 
+                  onClick={() => window.dispatchEvent(new CustomEvent('spawn-canvases-widget'))}
+                  className="text-on_surface_variant hover:text-white transition-colors p-1" 
+                  title="Workspaces / History"
+                >
+                    <History size={16} />
+                </button>
+                <button 
+                  onClick={() => window.dispatchEvent(new CustomEvent('spawn-settings-widget'))}
+                  className="text-on_surface_variant hover:text-white transition-colors p-1 mr-2" 
+                  title="Settings"
+                >
+                    <Settings size={16} />
+                </button>
+
                 {/* Profile Selector (Integrated from hidden panel) */}
                 <select 
                    value={useCanvasStore(state => state.currentProfileId)} 
