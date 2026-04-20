@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
 import { Globe, X, Maximize2, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react'
-import { NodeProps, useReactFlow } from '@xyflow/react'
+import { useReactFlow } from '@xyflow/react'
+import type { NodeProps } from '@xyflow/react'
 
 const isValidDataUrl = (str: string | undefined): boolean => {
   if (!str) return false;
