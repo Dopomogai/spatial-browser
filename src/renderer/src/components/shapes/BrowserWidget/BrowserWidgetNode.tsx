@@ -87,6 +87,27 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
       checkHistoryStates()
     }
 
+    webview.addEventListener('did-start-loading', checkHistoryStates)
+    webview.addEventListener('did-navigate', handleDidNavigate)
+    webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage)
+    webview.addEventListener('page-title-updated', handlePageTitleUpdated)
+    webview.addEventListener('dom-ready', handleDomReadyExecution)
+
+    return () => {
+      isMounted = false;
+      webview.removeEventListener('did-start-loading', checkHistoryStates)
+      webview.removeEventListener('did-navigate', handleDidNavigate)
+      webview.removeEventListener('did-navigate-in-page', handleDidNavigateInPage)
+      webview.removeEventListener('page-title-updated', handlePageTitleUpdated)
+      webview.removeEventListener('dom-ready', handleDomReadyExecution)
+    }
+  }, [id, widget.url])
+
+  // Stable context menu listener that survives navigation
+  useEffect(() => {
+    const webview = webviewRef.current
+    if (!webview) return
+
     const handleContextMenu = (e: any) => {
         window.electron?.ipcRenderer?.send?.('show-webview-context-menu', {
              x: e.params.x, 
@@ -97,23 +118,13 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) 
         });
     }
 
-    webview.addEventListener('did-start-loading', checkHistoryStates)
-    webview.addEventListener('did-navigate', handleDidNavigate)
-    webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage)
-    webview.addEventListener('page-title-updated', handlePageTitleUpdated)
-    webview.addEventListener('dom-ready', handleDomReadyExecution)
     webview.addEventListener('context-menu', handleContextMenu)
 
     return () => {
-      isMounted = false;
-      webview.removeEventListener('did-start-loading', checkHistoryStates)
-      webview.removeEventListener('did-navigate', handleDidNavigate)
-      webview.removeEventListener('did-navigate-in-page', handleDidNavigateInPage)
-      webview.removeEventListener('page-title-updated', handlePageTitleUpdated)
-      webview.removeEventListener('dom-ready', handleDomReadyExecution)
       webview.removeEventListener('context-menu', handleContextMenu)
     }
-  }, [id, widget.url])
+  }, [id])
+
   // Screenshot logic remains identical, caching visuals to DB/Store
   useEffect(() => {
     if (widget.interactionState !== 'active' && webviewRef.current && isReady) {
