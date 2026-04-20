@@ -205,8 +205,6 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
     />
     <div className="bg-surface-container-high rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.5)] border border-outline-variant/30 flex flex-col overflow-hidden relative group"
          style={{ width: widget.w, height: widget.h }}
-         onClick={(e) => e.stopPropagation()} // Prevents clicking the node from passing into the canvas background
-         onPointerDown={(e) => e.stopPropagation()}
          onMouseEnter={() => setIsHovered(true)}
          onMouseLeave={() => setIsHovered(false)}
     >
@@ -272,13 +270,13 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
         <div className={`absolute inset-0 top-0 h-10 ${widget.interactionState === 'active' ? 'cursor-move pointer-events-auto custom-drag-handle' : 'pointer-events-none'}`} />
         
         {widget.url.startsWith('about:blank#settings') ? (
-             <div className="w-full h-full bg-surface-container flex flex-col items-center justify-center text-on_surface_variant overflow-y-auto p-4 cursor-auto relative">
-                 <div className="w-full max-w-lg mb-6 flex flex-col gap-2">
+             <div className="w-full h-full bg-surface-container flex flex-col items-center justify-start text-on_surface_variant overflow-y-auto p-4 pt-12 cursor-auto relative">
+                 <div className="w-full max-w-lg mb-6 flex flex-col gap-2 shrink-0 border-b border-white/10 pb-4">
                      <h2 className="text-2xl font-bold text-white text-center">Settings</h2>
                      <p className="text-sm opacity-70 text-center">System preferences and AI integrations.</p>
                  </div>
                  
-                 <div className="w-full max-w-lg space-y-4 px-2">
+                 <div className="w-full max-w-lg space-y-4 px-2 pb-24 shrink-0">
                      <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-3">
                         <h3 className="font-semibold text-white">General UI</h3>
                         <label className="flex items-center gap-3 cursor-pointer group">
@@ -330,7 +328,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
                      </div>
                  </div>
                  
-                 <div className="absolute bottom-4 opacity-30 text-xs text-center flex flex-col gap-1 pointer-events-none">
+                 <div className="mt-8 mb-4 opacity-30 text-xs text-center flex flex-col gap-1 pointer-events-none shrink-0">
                      <span>Dopomogai Spatial OS v1.5.0</span>
                      <span>Chromium {window.electron?.process?.chrome || ''} • Electron {window.electron?.process?.electron || ''}</span>
                  </div>
