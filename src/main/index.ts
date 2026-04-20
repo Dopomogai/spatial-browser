@@ -46,8 +46,6 @@ app.on('web-contents-created', (event, contents) => {
          menu.popup({ window: mainWindow || undefined })
       }
     });
-  }
-})
 
     contents.setWindowOpenHandler(({ url }) => {
         if (mainWindow) {
@@ -65,9 +63,8 @@ app.on('web-contents-created', (event, contents) => {
           console.warn('Blocked file:// protocol navigation in webview')
         }
       })
-      
-    }
-  })
+  }
+})
 
   wss.on('connection', (ws) => {
     console.log('AI Backend Connected')
@@ -149,6 +146,16 @@ ipcMain.on('toggle-omnibar', (event) => {
   }
 })
 
+ipcMain.on("toggle-fullscreen", (event, tabId) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) {
+    const isFullScreen = win.isFullScreen();
+    win.setFullScreen(!isFullScreen);
+    
+    // We send an event back so React Flow can intercept it and physically maximize the targeted React Flow node bounds
+    win.webContents.send("fullscreen-toggled", { tabId, isFullScreen: !isFullScreen });
+  }
+});
 ipcMain.on('show-webview-context-menu', (event, params) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (!win) return;

@@ -211,7 +211,12 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
             }} 
             className="w-3 h-3 rounded-full bg-tertiary hover:opacity-80"
           ></button>
-          <button className="w-3 h-3 rounded-full bg-[#34c759] hover:opacity-80"></button>
+          <button 
+            onClick={() => {
+              window.ipcRenderer.send('toggle-fullscreen', id);
+            }} 
+            className="w-3 h-3 rounded-full bg-[#34c759] hover:opacity-80 flex items-center justify-center text-black font-bold"
+          ></button>
         </div>
         
         <div className="flex gap-2 ml-4 text-on-surface-variant flex-shrink-0 border-l border-white/5 pl-4">
