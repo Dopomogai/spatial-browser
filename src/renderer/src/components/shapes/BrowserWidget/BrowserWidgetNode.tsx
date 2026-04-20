@@ -1,0 +1,203 @@
+import React, { useEffect, useRef, useState } from 'react'
+import { useCanvasStore } from '../../../store/useCanvasStore'
+import { Globe, X, Maximize2, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react'
+import { NodeProps, useReactFlow } from '@xyflow/react'
+
+const isValidDataUrl = (str: string | undefined): boolean => {
+  if (!str) return false;
+  return str.startsWith('data:image/png;base64,') && str.length > 30; 
+}
+
+export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
+  const { updateWidgetData, removeWidget, isSpacebarHeld } = useCanvasStore()
+  const widget = data as any // data mapped via AppNode in store
+  const webviewRef = useRef<any>(null)
+  
+  const [isReady, setIsReady] = useState(false)
+  const [isShiftHeld, setIsShiftHeld] = useState(false)
+  const [canGoBack, setCanGoBack] = useState(false)
+  const [canGoForward, setCanGoForward] = useState(false)
+  const { setNodes } = useReactFlow() // Natively resize nodes
+
+  // Hardware controls listening
+  useEffect(() => {
+    const handleShiftChange = (e: any) => setIsShiftHeld(e.detail.held)
+    // Keep spacebar/shift listener purely to disable pointer-events so ReactFlow can pan the container
+    window.addEventListener('shift-state-change' as any, handleShiftChange)
+    return () => window.removeEventListener('shift-state-change' as any, handleShiftChange)
+  }, [])
+
+  // Listen for navigation events to update URL
+  useEffect(() => {
+    if (!webviewRef.current) return
+    const webview = webviewRef.current
+
+    const handleDomReady = () => setIsReady(true)
+    const handleContextMenu = (e: any) => e.preventDefault()
+
+    const handleDidNavigate = (e: any) => {
+      if (e.url !== widget.url) updateWidgetData(id, { url: e.url })
+      setCanGoBack(webviewRef.current?.canGoBack() || false)
+      setCanGoForward(webviewRef.current?.canGoForward() || false)
+    }
+    
+    const handleDidNavigateInPage = (e: any) => {
+      if (e.url !== widget.url && e.isMainFrame) updateWidgetData(id, { url: e.url })
+      setCanGoBack(webviewRef.current?.canGoBack() || false)
+      setCanGoForward(webviewRef.current?.canGoForward() || false)
+    }
+
+    const handlePageTitleUpdated = (e: any) => {
+      if (e.title !== widget.title) updateWidgetData(id, { title: e.title })
+    }
+
+    webview.addEventListener('did-start-loading', () => {
+         setCanGoBack(webviewRef.current?.canGoBack() || false)
+         setCanGoForward(webviewRef.current?.canGoForward() || false)
+    })
+    webview.addEventListener('did-navigate', handleDidNavigate)
+    webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage)
+    webview.addEventListener('page-title-updated', handlePageTitleUpdated)
+    webview.addEventListener('dom-ready', handleDomReady)
+    webview.addEventListener('context-menu', handleContextMenu)
+
+    return () => {
+      webview.removeEventListener('did-navigate', handleDidNavigate)
+      webview.removeEventListener('did-navigate-in-page', handleDidNavigateInPage)
+      webview.removeEventListener('page-title-updated', handlePageTitleUpdated)
+      webview.removeEventListener('dom-ready', handleDomReady)
+      webview.removeEventListener('context-menu', handleContextMenu)
+    }
+  }, [widget?.url, widget?.title, id, updateWidgetData])
+
+  // Screenshot logic remains identical, caching visuals to DB/Store
+  useEffect(() => {
+    if (widget.interactionState !== 'active' && webviewRef.current && isReady) {
+      if (webviewRef.current.capturePage) {
+        webviewRef.current.capturePage().then((image: any) => {
+            const dataUrl = image.toDataURL();
+            if (isValidDataUrl(dataUrl)) updateWidgetData(id, { screenshotBase64: dataUrl });
+        }).catch(console.error)
+      }
+    }
+  }, [widget?.interactionState, id, updateWidgetData, isReady])
+
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    if (widget?.interactionState === 'active' && webviewRef.current && isReady) {
+      if (webviewRef.current.getURL) {
+        timeout = setTimeout(() => {
+          if (!webviewRef.current) return;
+          try {
+            const currentUrl = webviewRef.current.getURL();
+            if (currentUrl && currentUrl !== widget.url && currentUrl !== '') {
+                webviewRef.current.loadURL(widget.url);
+            }
+          } catch(e) {}
+        }, 100);
+      }
+    }
+    return () => { if(timeout) clearTimeout(timeout) }
+  }, [widget?.interactionState, widget?.url, isReady])
+
+  if (!widget) return null
+
+  // Resize helper that updates React Flow's native internal dimension trackers
+  const expandWidget = () => {
+      updateWidgetData(id, { interactionState: 'active' });
+      // In React Flow, we resize simply by updating our custom store node width/height 
+      // or letting the CSS dictate the node's dimensions. Here we enforce it via w/h in state.
+      updateWidgetData(id, { w: 800, h: 600 });
+  }
+
+  return (
+    <div className="bg-surface-container-high rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.5)] border border-outline-variant/30 flex flex-col overflow-hidden relative group"
+         style={{ width: widget.w, height: widget.h }}
+         onClick={(e) => e.stopPropagation()} // Prevents clicking the node from passing into the canvas background
+         onPointerDown={(e) => e.stopPropagation()}
+    >
+      
+      <div className={`h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4 justify-between transition-transform duration-300 transform z-20 absolute top-0 w-full
+        ${widget.interactionState === 'active' ? 'translate-y-0 opacity-100 group-hover:translate-y-0 group-hover:opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
+        
+        <div className="flex items-center gap-2">
+          <button onClick={() => removeWidget(id)} className="w-3 h-3 rounded-full bg-error hover:opacity-80"></button>
+          <button 
+            onClick={() => {
+              updateWidgetData(id, { interactionState: 'minimized', w: 250, h: 48 })
+            }} 
+            className="w-3 h-3 rounded-full bg-tertiary hover:opacity-80"
+          ></button>
+          <button className="w-3 h-3 rounded-full bg-[#34c759] hover:opacity-80"></button>
+        </div>
+        
+        <div className="flex gap-2 ml-4 text-on-surface-variant flex-shrink-0 border-l border-white/5 pl-4">
+          <button onClick={() => { if(canGoBack) webviewRef.current?.goBack() }} disabled={!canGoBack} className={`hover:text-white transition-colors p-1 rounded hover:bg-white/10 ${!canGoBack && 'opacity-30 cursor-not-allowed'}`}>
+            <ChevronLeft size={16} />
+          </button>
+          <button onClick={() => { if(canGoForward) webviewRef.current?.goForward() }} disabled={!canGoForward} className={`hover:text-white transition-colors p-1 rounded hover:bg-white/10 ${!canGoForward && 'opacity-30 cursor-not-allowed'}`}>
+            <ChevronRight size={16} />
+          </button>
+          <button onClick={() => { webviewRef.current?.reload() }} className="hover:text-white transition-colors p-1 rounded hover:bg-white/10 ml-1">
+            <RotateCw size={14} />
+          </button>
+        </div>
+
+        <div className="flex-1 mx-6 flex justify-center cursor-move custom-drag-handle"> 
+          {/* React flow allows applying ".custom-drag-handle" class to limit dragging to header only! */}
+          <div className="bg-surface-container-high px-4 py-1.5 rounded-full text-xs font-mono text-on-surface-variant/80 border border-outline-variant/20 flex items-center gap-2 max-w-sm w-full truncate shadow-inner">
+            <Globe size={12} className="opacity-50" />
+            <span className="truncate">{widget.url}</span>
+          </div>
+        </div>
+        <div className="w-20"></div>
+      </div>
+
+      <div className={`flex-1 w-full bg-white relative ${widget.interactionState === 'active' ? 'mt-12 opacity-100' : 'hidden'}`}
+           style={{ pointerEvents: widget.interactionState === 'active' ? 'auto' : 'none' }}
+      >
+        <div className={`absolute inset-0 top-0 h-10 ${widget.interactionState === 'active' ? 'cursor-move pointer-events-auto custom-drag-handle' : 'pointer-events-none'}`} />
+        
+        <webview
+          ref={webviewRef}
+          src={widget.url}
+          className={`w-full h-full border-none ${isSpacebarHeld || isShiftHeld ? 'pointer-events-none' : 'pointer-events-auto'}`}
+          partition="persist:main"
+          preload={`file://${(window as any).api?.getPreloadPath?.() || '../preload/index.js'}`}
+        />
+      </div>
+
+      {widget.interactionState === 'sleeping' && (
+        // UI matches exactly, but we removed the manual TLDraw pointer-events math
+        <div className="absolute inset-0 z-30 bg-[#131315] flex flex-col overflow-hidden group">
+           <div className="flex-1 w-full bg-black relative flex items-center justify-center overflow-hidden pointer-events-auto">
+             {widget.screenshotBase64 && (
+              <img src={widget.screenshotBase64} alt="site" className="absolute inset-0 w-full h-full object-cover opacity-50 grayscale-[20%]" />
+             )}
+             <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm">
+                <button className="bg-[#aac7ff] text-[#131315] px-6 py-2.5 rounded-full font-bold" onClick={(e) => { e.stopPropagation(); expandWidget() }}>
+                  Wake Tab
+                </button>
+             </div>
+           </div>
+        </div>
+      )}
+
+      {widget.interactionState === 'minimized' && (
+        <div className="absolute inset-0 z-40 bg-surface-container-high rounded-full shadow-lg border border-outline-variant/30 flex items-center px-4 gap-3 group cursor-pointer hover:bg-surface-container-highest transition-colors"
+          onClick={(e) => { e.stopPropagation(); expandWidget() }}
+        >
+          <Globe size={16} className="text-primary" />
+          <span className="text-sm font-semibold text-on-surface truncate flex-1">{widget.title || widget.url}</span>
+          <button onClick={(e) => { e.stopPropagation(); expandWidget() }} className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-surface-container-lowest rounded-full text-on-surface-variant transition-all">
+            <Maximize2 size={14} />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); removeWidget(id) }} className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-error/20 hover:text-error rounded-full text-on-surface-variant transition-all">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+    </div>
+  )
+}

@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useCanvasStore } from '../../store/useCanvasStore'
 import { Search } from 'lucide-react'
-import { useEditor } from 'tldraw'
 
 export const Omnibar: React.FC = () => {
   const { isOmnibarOpen, setOmnibarOpen, addWidget, omnibarPosition } = useCanvasStore()
   const [url, setUrl] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   
-  // Need to get the editor to find viewport center
-  const editor = useEditor()
-
   useEffect(() => {
     if (isOmnibarOpen) {
        setTimeout(() => {
@@ -52,16 +48,15 @@ export const Omnibar: React.FC = () => {
     let centerX = 0
     let centerY = 0
     
-    if (omnibarPosition && editor) {
-        // Omnibar Position is in raw Screen coordinates, but widgets need to be spawned in Canvas coordinates
-        const pagePos = editor.screenToPage({ x: omnibarPosition.x, y: omnibarPosition.y })
-        centerX = pagePos.x
-        centerY = pagePos.y
-    } else if (editor) {
-        const bounds = editor.getViewportPageBounds()
-        centerX = bounds.x + bounds.w / 2 - 400 // half of default widget width
-        centerY = bounds.y + bounds.h / 2 - 300 // half of default widget height
-    }
+    // Natively provided by ReactFlow! No need to pipe the `editor` down here, 
+    // the Omnibar can just dispatch the raw creation and SpatialCanvas will handle the screen-to-flow mapping
+    // if an override was provided.
+
+    if (omnibarPosition) {
+        // Here we just map exactly where the context menu was clicked. We let ReactFlow's creation logic handle offsets.
+        centerX = omnibarPosition.x - 400
+        centerY = omnibarPosition.y - 300
+    } // else, arbitrary center fallbacks are handled later
 
     addWidget(finalUrl, centerX, centerY)
     setOmnibarOpen(false)
