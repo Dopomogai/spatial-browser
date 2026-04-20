@@ -57,15 +57,23 @@ function App() {
         window.dispatchEvent(new CustomEvent('shift-state-change', { detail: { held: isHeld } }));
     };
 
+    const handleWindowBlur = () => {
+        // Clear shift lock globally when clicking away or into webviews 
+        // that trap focus
+        window.dispatchEvent(new CustomEvent('shift-state-change', { detail: { held: false } }));
+    };
+
     if (window.electron?.ipcRenderer) {
         window.electron.ipcRenderer.on('shift-state-change', handleIpcShiftState);
     }
 
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('blur', handleWindowBlur)
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('blur', handleWindowBlur)
       window.removeEventListener('open-new-profile-modal', handleProfileModalOpen)
       if (window.electron?.ipcRenderer) {
           window.electron.ipcRenderer.removeListener?.('shift-state-change', handleIpcShiftState)
