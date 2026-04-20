@@ -74,8 +74,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   currentProfileId: 'default',
   profiles: [{ id: 'default', name: 'Default Profile', nodes: [], edges: [] }],
   isOmnibarOpen: false,
+  omnibarPosition: null, // this holds physical canvas coordinates, NOT visual css integers!
   isSpacebarHeld: false,
-  omnibarPosition: null,
 
   undoStack: [],
   redoStack: [],

@@ -49,7 +49,7 @@ const CanvasContent = () => {
   // Handle global events dispatched from TopTabBar or elsewhere
   useEffect(() => {
     const handleSpawnCenter = () => {
-      setOmnibarOpen(true, null) // Triggers the absolute center calculation inside the Omnibar
+      setOmnibarOpen(true, null) // Allows falling back to standard center without an exact flow Pos
     }
     const handlePanToWidget = (e: any) => {
         try {
@@ -285,7 +285,7 @@ const CanvasContent = () => {
               <button 
                 onClick={() => {
                     setContextMenuOpen(false)
-                    // Pass the true screen coordinates for the UI Omnibar overlay
+                    // Pass the true screen coordinates for mathematical insertion, not visual UI placement
                     setOmnibarOpen(true, contextMenuPos) 
                 }}
                 className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex flex-row items-center gap-2"
