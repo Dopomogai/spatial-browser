@@ -209,6 +209,9 @@ export const SpatialCanvas: React.FC = () => {
       */}
       <Tldraw 
         shapeUtils={customShapeUtils}
+        onMount={(editor) => {
+            useCanvasStore.getState().setEditor(editor)
+        }}
         components={{
           Toolbar: null,
           DebugMenu: null,

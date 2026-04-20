@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
-import { Globe, X, Maximize2, ChevronLeft, ChevronRight, History } from 'lucide-react'
+import { Globe, X, Maximize2, ChevronLeft, ChevronRight, History, RotateCw } from 'lucide-react'
 import { useEditor } from 'tldraw'
 
 // Helper to validate base64 strings so React avoids passing garbage to <img> tags
@@ -281,6 +281,9 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
           </button>
           <button onClick={() => { if(canGoForward) webviewRef.current?.goForward() }} disabled={!canGoForward} className={`hover:text-white transition-colors p-1 rounded hover:bg-white/10 ${!canGoForward && 'opacity-30 cursor-not-allowed'}`}>
             <ChevronRight size={16} />
+          </button>
+          <button onClick={() => { webviewRef.current?.reload() }} className="hover:text-white transition-colors p-1 rounded hover:bg-white/10 ml-1">
+            <RotateCw size={14} />
           </button>
         </div>
 

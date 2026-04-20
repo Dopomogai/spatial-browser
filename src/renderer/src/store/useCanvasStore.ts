@@ -29,6 +29,8 @@ export interface WorkspaceProfile {
 }
 
 export interface CanvasStore {
+  editor: any | null;
+  setEditor: (editor: any) => void;
   widgets: Record<string, SpatialWidget>
   currentProfileId: string
   profiles: WorkspaceProfile[]
@@ -55,7 +57,9 @@ export interface CanvasStore {
 // Debounce for saving to IDB to avoid performance hits
 let saveTimeout: any
 
-export const useCanvasStore = create<CanvasStore>((setStore) => ({
+export const useCanvasStore = create<CanvasStore>((set, get) => ({
+  editor: null,
+  setEditor: (editor) => set({ editor }),
   widgets: {},
   currentProfileId: 'default',
   profiles: [{ id: 'default', name: 'Default Profile', widgets: {} }],
