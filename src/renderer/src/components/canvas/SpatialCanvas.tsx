@@ -64,13 +64,19 @@ const CanvasContent = () => {
         const id = `canvases_widget_${Date.now()}`
         const viewport = getViewport()
         const scale = viewport.zoom
-        const visibleX = -viewport.x / scale
-        const visibleY = -viewport.y / scale
+        
+        const windowWidth = window.innerWidth
+        const windowHeight = window.innerHeight
+        const centerXV = windowWidth / 2
+        const centerYV = windowHeight / 2
+        
+        const visibleX = (centerXV - viewport.x) / scale - 250 // offset for widget half width (500/2)
+        const visibleY = (centerYV - viewport.y) / scale - 200 // offset for widget half height (400/2)
         
         const newNode: AppNode = {
             id,
             type: 'browser_widget', 
-            position: { x: visibleX + Math.random()*100, y: visibleY + Math.random()*100 },
+            position: { x: visibleX, y: visibleY },
             data: {
               url: 'about:blank#history', 
               title: 'History & Workspaces',
@@ -106,13 +112,19 @@ const CanvasContent = () => {
         const id = `settings_widget_${Date.now()}`
         const viewport = getViewport()
         const scale = viewport.zoom
-        const visibleX = -viewport.x / scale
-        const visibleY = -viewport.y / scale
+        
+        const windowWidth = window.innerWidth
+        const windowHeight = window.innerHeight
+        const centerXV = windowWidth / 2
+        const centerYV = windowHeight / 2
+        
+        const visibleX = (centerXV - viewport.x) / scale - 250 // offset for widget half width (500/2)
+        const visibleY = (centerYV - viewport.y) / scale - 200 // offset for widget half height (400/2)
         
         const newNode: AppNode = {
             id,
             type: 'browser_widget', // Built via browser node routing to settings page for now
-            position: { x: visibleX + Math.random()*100, y: visibleY + Math.random()*100 },
+            position: { x: visibleX, y: visibleY },
             data: {
               url: 'about:blank#settings', // Distinguishes it inside the Node
               title: 'Settings',
