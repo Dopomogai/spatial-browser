@@ -46,8 +46,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
     }
 
     const checkHistoryStates = () => {
-       if (!isMounted || !webviewRef.current?.getWebContentsId) return;
-       // Safety catch: Electron throws an error if Webview isn't attached to DOM yet
+       if (!isMounted || !webviewRef.current || !isReady) return;
        try {
            setCanGoBack(webviewRef.current.canGoBack() || false)
            setCanGoForward(webviewRef.current.canGoForward() || false)
@@ -110,7 +109,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
             el = el.parentElement;
           }
 
-          window.ipcRenderer.send('webview-context-menu', {
+          window.electron.ipcRenderer.send('show-webview-context-menu', {
              x: e.x, 
              y: e.y, 
              linkURL: href, 
@@ -229,7 +228,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
           ></button>
           <button 
             onClick={() => {
-              window.ipcRenderer.send('toggle-fullscreen', id);
+              window.electron?.ipcRenderer?.send('toggle-fullscreen', id);
             }} 
             className="w-3 h-3 rounded-full bg-[#34c759] hover:opacity-80 flex items-center justify-center text-black font-bold"
           ></button>
@@ -275,7 +274,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
       >
         <div className={`absolute inset-0 top-0 h-10 ${widget.interactionState === 'active' ? 'cursor-move pointer-events-auto custom-drag-handle' : 'pointer-events-none'}`} />
         
-        {widget.url.startsWith('about:blank') ? (
+        {widget.url.startsWith('about:blank#settings') ? (
              <div className="w-full h-full bg-surface-container flex flex-col items-center justify-center text-on_surface_variant overflow-y-auto p-4 cursor-auto relative">
                  <div className="w-full max-w-lg mb-6 flex flex-col gap-2">
                      <h2 className="text-2xl font-bold text-white text-center">Settings</h2>
@@ -296,28 +295,40 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
                      </div>
                      
                      <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-3">
-                        <h3 className="font-semibold text-white">Oragai Copilot</h3>
+                        <h3 className="font-semibold text-white">Advanced / Integrations</h3>
                         <label className="flex items-center gap-3 cursor-pointer group">
-                            <input defaultChecked type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">Show Vision Action Boxes (Red/Green outlines)</span>
+                            <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
+                            <span className="text-sm group-hover:text-white transition-colors">DigitalOcean Supabase Syncer</span>
                         </label>
                         <label className="flex items-center gap-3 cursor-pointer group">
                             <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
-                            <span className="text-sm group-hover:text-white transition-colors">Auto-Execute suggested code</span>
+                            <span className="text-sm group-hover:text-white transition-colors">Oragai Spatial OS Control Proxy</span>
                         </label>
-                     </div>
-
-                     <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-4">
-                        <h3 className="font-semibold text-white">Database & Sync</h3>
-                        <button className="bg-primary/20 text-primary w-full py-2.5 rounded-lg border border-primary/20 font-medium hover:bg-primary hover:text-white transition-all text-sm outline-none">
-                            Force Manual Sync (Supabase)
-                        </button>
-                        <button className="bg-error/10 text-error w-full py-2.5 rounded-lg border border-error/20 font-medium hover:bg-error hover:text-white transition-all text-sm outline-none">
-                            Wipe Local Spatial DB cache
-                        </button>
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
+                            <span className="text-sm group-hover:text-white transition-colors">Show Hardware Ghost Cursors (AI Debug)</span>
+                        </label>
                      </div>
                  </div>
                  
+                 <div className="absolute bottom-4 opacity-30 text-xs text-center flex flex-col gap-1 pointer-events-none">
+                     <span>Dopomogai Spatial OS v1.5.0</span>
+                     <span>Chromium {window.electron?.process?.chrome || ''} • Electron {window.electron?.process?.electron || ''}</span>
+                 </div>
+             </div>
+        ) : widget.url.startsWith('about:blank#history') ? (
+             <div className="w-full h-full bg-surface-container flex flex-col items-center justify-center text-on_surface_variant overflow-y-auto p-4 cursor-auto relative">
+                 <div className="w-full max-w-lg mb-6 flex flex-col gap-2">
+                     <h2 className="text-2xl font-bold text-white text-center">History & Workspaces</h2>
+                     <p className="text-sm opacity-70 text-center">Recent history and spatial states</p>
+                 </div>
+                 <div className="w-full max-w-lg space-y-4 px-2">
+                      <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-3 items-center justify-center h-32">
+                         No history yet
+                      </div>
+                 </div>
+             </div>
+        ) : (
                  <div className="absolute bottom-4 opacity-30 text-xs text-center flex flex-col gap-1 pointer-events-none">
                      <span>Dopomogai Spatial OS v1.5.0</span>
                      <span>Chromium {window.electron?.process?.chrome || ''} • Electron {window.electron?.process?.electron || ''}</span>

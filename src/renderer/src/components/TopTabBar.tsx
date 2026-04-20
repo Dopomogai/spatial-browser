@@ -178,10 +178,10 @@ export const TopTabBar: React.FC = () => {
 
             {/* Right Controls: Undo / Redo */}
             <div className="flex items-center gap-2 pl-4 ml-4 border-l border-white/5 h-6">
-                <button onClick={undo} disabled={undoStack.length === 0} className={`transition-colors ${undoStack.length === 0 ? 'text-on_surface_variant/30 cursor-not-allowed' : 'text-on_surface_variant hover:text-white'}`} title="Undo Canvas Action">
+                <button onClick={undo} disabled={undoStack.length === 0} className={`transition-colors ${undoStack.length === 0 ? 'text-on-surface-variant/30 opacity-30 cursor-not-allowed' : 'text-on-surface-variant hover:text-white'} p-1 rounded`} title="Undo Canvas Action">
                     <Undo size={16} />
                 </button>
-                <button onClick={redo} disabled={redoStack.length === 0} className={`transition-colors ${redoStack.length === 0 ? 'text-on_surface_variant/30 cursor-not-allowed' : 'text-on_surface_variant hover:text-white'}`} title="Redo Canvas Action">
+                <button onClick={redo} disabled={redoStack.length === 0} className={`transition-colors ${redoStack.length === 0 ? 'text-on-surface-variant/30 opacity-30 cursor-not-allowed' : 'text-on-surface-variant hover:text-white'} p-1 rounded`} title="Redo Canvas Action">
                     <Redo size={16} />
                 </button>
             </div>

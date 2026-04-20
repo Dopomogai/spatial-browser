@@ -36,16 +36,12 @@ const CanvasContent = () => {
   const [contextMenuOpen, setContextMenuOpen] = useState(false)
   const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 })
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    // If the target originated from inside a node, DO NOT open the generic canvas menu
-    if ((e.target as HTMLElement).closest('.react-flow__node') || (e.target as HTMLElement).tagName === 'WEBVIEW') {
-        return;
-    }
-    e.preventDefault()
-    e.stopPropagation()
-    setContextMenuOpen(true)
-    setContextMenuPos({ x: e.clientX, y: e.clientY })
-  }
+  const onPaneContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenuOpen(true);
+    setContextMenuPos({ x: e.clientX, y: e.clientY });
+  };
 
   // Handle global events dispatched from TopTabBar or elsewhere
   useEffect(() => {
@@ -62,6 +58,38 @@ const CanvasContent = () => {
                 setCenter(widgetNode.position.x + (w/2), widgetNode.position.y + (h/2), { duration: 500, zoom: 1 })
             }
         } catch(err) {}
+    }
+
+    const handleSpawnCanvases = () => {
+        const id = `canvases_widget_${Date.now()}`
+        const viewport = getViewport()
+        const scale = viewport.zoom
+        const visibleX = -viewport.x / scale
+        const visibleY = -viewport.y / scale
+        
+        const newNode: AppNode = {
+            id,
+            type: 'browser_widget', 
+            position: { x: visibleX + Math.random()*100, y: visibleY + Math.random()*100 },
+            data: {
+              url: 'about:blank#history', 
+              title: 'History & Workspaces',
+              faviconUrl: '',
+              screenshotBase64: null,
+              w: 400,
+              h: 300,
+              interactionState: 'active',
+              lastActive: Date.now(),
+              tabHistory: ['about:blank#history'],
+              currentHistoryIndex: 0
+            }
+        }
+        
+        useCanvasStore.setState((state) => ({
+            nodes: [...state.nodes, newNode],
+            undoStack: [...state.undoStack, state.nodes].slice(-50),
+            redoStack: []
+        }))
     }
 
     const handleSpawnSettings = () => {
@@ -98,11 +126,13 @@ const CanvasContent = () => {
 
     window.addEventListener('spawn-tab-center', handleSpawnCenter)
     window.addEventListener('spawn-settings-widget', handleSpawnSettings)
+    window.addEventListener('spawn-canvases-widget', handleSpawnCanvases)
     window.addEventListener('pan-to-widget' as any, handlePanToWidget)
 
     return () => {
       window.removeEventListener('spawn-tab-center', handleSpawnCenter)
       window.removeEventListener('spawn-settings-widget', handleSpawnSettings)
+      window.removeEventListener('spawn-canvases-widget', handleSpawnCanvases)
       window.removeEventListener('pan-to-widget' as any, handlePanToWidget)
     }
   }, [nodes, setCenter, setOmnibarOpen, getViewport])
@@ -150,13 +180,14 @@ const CanvasContent = () => {
   }, [nodes, getViewport, updateWidgetData])
 
   return (
-    <div className="w-full h-full relative" onContextMenu={handleContextMenu} onClick={() => setContextMenuOpen(false)} onPointerDown={() => setContextMenuOpen(false)}>
+    <div className="w-full h-full relative" onClick={() => setContextMenuOpen(false)} onPointerDown={() => setContextMenuOpen(false)}>
       
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onPaneContextMenu={onPaneContextMenu}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         // Force the background to intercept the mouse pan event ONLY when Space or Shift is held
