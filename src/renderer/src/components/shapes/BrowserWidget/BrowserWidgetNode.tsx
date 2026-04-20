@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
-import { Globe, X, Maximize2, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react'
+import { Globe, X, Maximize2, ChevronLeft, ChevronRight, RotateCw, Copy } from 'lucide-react'
 import { NodeResizer, useReactFlow } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 
@@ -10,7 +10,7 @@ const isValidDataUrl = (str: string | undefined): boolean => {
   return str.startsWith('data:image/png;base64,') && str.length > 30; 
 }
 
- export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) => {
+ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data, positionX, positionY }) => {
    const { updateWidgetData, removeWidget, isSpacebarHeld, defaultTabWidth, defaultTabHeight, setDefaultTabSize } = useCanvasStore()
    const widget = data as any // data mapped via AppNode in store
    const webviewRef = useRef<any>(null)
@@ -239,7 +239,8 @@ const isValidDataUrl = (str: string | undefined): boolean => {
           <button 
             type="button"
             onClick={() => {
-              window.electron?.ipcRenderer?.send('toggle-fullscreen', id);
+              updateWidgetData(id, { interactionState: 'active', w: window.innerWidth, h: window.innerHeight, tabHistoryW: currentW, tabHistoryH: currentH })
+              window.dispatchEvent(new CustomEvent('fullscreen-toggled-client', { detail: { tabId: id, isFullScreen: true } }));
             }} 
             className="w-3 h-3 rounded-full bg-[#34c759] hover:opacity-80 flex items-center justify-center text-black font-bold"
           ></button>
@@ -277,7 +278,27 @@ const isValidDataUrl = (str: string | undefined): boolean => {
             />
           </form>
         </div>
-        <div className="w-20"></div>
+        <div className="flex gap-2 mr-4 text-on-surface-variant flex-shrink-0 border-r border-white/5 pr-4 justify-end">
+          <button type="button" onClick={() => {
+              const viewport = window.electron ? null : null; // Hack to fix lint if needed, actually we just need store
+              const id = `browser_${Date.now()}`
+              const newNode = {
+                  id,
+                  type: 'browser_widget', 
+                  position: { x: positionX + 50, y: positionY + 50 },
+                  data: {
+                    ...widget,
+                    id: undefined,
+                    interactionState: 'active',
+                    lastActive: Date.now()
+                  }
+              }
+              const store = useCanvasStore.getState()
+              store.addNode(newNode)
+            }} className="hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10" title="Duplicate Tab">
+            <Copy size={14} />
+          </button>
+        </div>
       </div>
 
       <div className={`flex-1 w-full bg-white relative ${widget.interactionState === 'active' ? 'mt-12 opacity-100' : 'hidden'}`}

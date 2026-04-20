@@ -117,18 +117,12 @@ const CanvasContent = () => {
         }))
     }
 
-    const handleFullscreenToggled = (_e: any, { tabId, isFullScreen }: { tabId: string, isFullScreen: boolean }) => {
+    const handleFullscreenToggled = (e: any) => {
+        const { tabId, isFullScreen } = e.detail;
         const widget = nodes.find(n => n.id === tabId)
         if (!widget) return;
         
         if (isFullScreen) {
-            updateWidgetData(tabId, { 
-                interactionState: 'active', 
-                w: window.innerWidth, 
-                h: window.innerHeight,
-                tabHistoryW: widget.data.w,
-                tabHistoryH: widget.data.h
-            })
             // setCenter takes x,y of the exact point to focus on, and zoom.
             // When putting the tab center at widget.x + w/2 and widget.y + h/2, with zoom 1, 
             // the innerWidth and innerHeight of the browser matches the widget size exactly,
@@ -154,6 +148,7 @@ const CanvasContent = () => {
     }
         
     const handleSpawnSettings = () => {
+        const viewport = getViewport()
         const windowWidth = window.innerWidth
         const windowHeight = window.innerHeight
         const centerXV = windowWidth / 2
@@ -192,7 +187,7 @@ const CanvasContent = () => {
     window.addEventListener('spawn-settings-widget', handleSpawnSettings)
     window.addEventListener('spawn-canvases-widget', handleSpawnCanvases)
     window.addEventListener('pan-to-widget' as any, handlePanToWidget)
-    window.electron?.ipcRenderer?.on('fullscreen-toggled', handleFullscreenToggled)
+    window.addEventListener('fullscreen-toggled-client', handleFullscreenToggled)
 
     return () => {
       window.removeEventListener('spawn-tab-center', handleSpawnCenter)
@@ -200,7 +195,7 @@ const CanvasContent = () => {
       window.removeEventListener('spawn-settings-widget', handleSpawnSettings)
       window.removeEventListener('spawn-canvases-widget', handleSpawnCanvases)
       window.removeEventListener('pan-to-widget' as any, handlePanToWidget)
-      window.electron?.ipcRenderer?.removeListener?.('fullscreen-toggled', handleFullscreenToggled)
+      window.removeEventListener('fullscreen-toggled-client', handleFullscreenToggled)
     }
   }, [nodes, setCenter, setOmnibarOpen, getViewport])
 
@@ -253,7 +248,7 @@ const CanvasContent = () => {
   }
 
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full relative" onClick={() => setContextMenuOpen(false)} onPointerDown={() => setContextMenuOpen(false)}>
       
       <ReactFlow
         nodes={nodes}
