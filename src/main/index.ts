@@ -17,11 +17,15 @@ function setupWebSocketServer() {
   console.log(`WebSocket Server running on ws://localhost:${port}`)
 
   // Hardened WebView isolation
-  app.on('web-contents-created', (event, contents) => {
-    if (contents.getType() === 'webview') {
-      
-      // Stop new windows from spawning as electron shells
-      contents.setWindowOpenHandler(({ url }) => {
+app.on('web-contents-created', (event, contents) => {
+  if (contents.getType() === 'webview') {
+    // Intercept native Webview right-clicks and suppress the default chromium menu
+    contents.on('context-menu', (e) => {
+      e.preventDefault();
+      // We process the manual IPC triggered menu instead via our show-webview-context-menu hook
+    });
+
+    contents.setWindowOpenHandler(({ url }) => {
         if (mainWindow) {
            // Send event to React store to spawn a natively styled Spatial Tab
            mainWindow.webContents.send('spawn-tab-from-link', url)

@@ -156,8 +156,11 @@ export const SpatialCanvas: React.FC = () => {
               if (editor && e.detail?.id) {
                   const widget = useCanvasStore.getState().widgets[e.detail.id];
                   if (widget) {
-                      editor.setCameraOptions({ isLocked: false, constraints: { bounds: null } });
-                      editor.centerOnPoint({ x: widget.x + (widget.w/2), y: widget.y + (widget.h/2) }, { animation: { duration: 300 } });
+                      const bounds = editor.getViewportPageBounds();
+                      // Center the specific widget on the screen 
+                      const centerX = widget.x + widget.w / 2;
+                      const centerY = widget.y + widget.h / 2;
+                      editor.setCamera({ x: -centerX + bounds.w / 2, y: -centerY + bounds.h / 2 }, { animation: { duration: 300 } });
                   }
               }
           } catch(err) {
@@ -175,7 +178,7 @@ export const SpatialCanvas: React.FC = () => {
   }, []);
 
   return (
-    <div className="w-full h-full relative" style={{ background: '#131315' }} onContextMenu={handleContextMenu} onClick={() => setContextMenuOpen(false)}>
+    <div className="w-full h-full relative" style={{ background: '#131315' }} onContextMenu={handleContextMenu} onClick={() => setContextMenuOpen(false)} onPointerDown={() => setContextMenuOpen(false)}>
       <div 
         className="absolute inset-0 pointer-events-none" 
         style={{
@@ -234,7 +237,7 @@ export const SpatialCanvas: React.FC = () => {
         <Omnibar />
         <Minimap />
                 {contextMenuOpen && (
-              <div className="bg-surface_container_highest/90 backdrop-blur-xl border border-white/5 shadow-[0_12px_32px_rgba(0,0,0,0.5)] rounded-xl py-1 w-48 animate-in fade-in zoom-in duration-100"
+              <div className="bg-[#242424] border border-white/10 shadow-[0_12px_32px_rgba(0,0,0,0.5)] rounded py-1 w-48 animate-in fade-in zoom-in duration-100"
               style={{
                   position: 'absolute',
                   top: contextMenuPos.y,
@@ -272,7 +275,26 @@ export const SpatialCanvas: React.FC = () => {
                       
                       const editor = useCanvasStore.getState().editor;
                       if (editor) {
-                          editor.zoomToFit()
+                          // Custom algorithm to center the view based on bounding boxes of widgets
+                          const widgets = Object.values(useCanvasStore.getState().widgets);
+                          if (widgets.length === 0) {
+                              editor.setCamera({ x: 0, y: 0 }, { animation: { duration: 300 } });
+                              return;
+                          }
+
+                          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                          widgets.forEach(w => {
+                              minX = Math.min(minX, w.x);
+                              minY = Math.min(minY, w.y);
+                              maxX = Math.max(maxX, w.x + w.w);
+                              maxY = Math.max(maxY, w.y + w.h);
+                          });
+
+                          const centerX = minX + (maxX - minX) / 2;
+                          const centerY = minY + (maxY - minY) / 2;
+                          const bounds = editor.getViewportPageBounds();
+                          // To center something on screen, map the canvas center subtracted by half viewport
+                          editor.setCamera({ x: -centerX + bounds.w / 2, y: -centerY + bounds.h / 2 }, { animation: { duration: 300 } });
                       }
                   }}
                   className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex items-center gap-2"
