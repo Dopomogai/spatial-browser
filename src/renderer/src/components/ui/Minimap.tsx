@@ -66,7 +66,14 @@ export const Minimap: React.FC = () => {
 
       // Use native camera positioning to bypass constraints error
       const bounds = editor.getViewportPageBounds();
-      editor.setCamera({ x: -targetX + bounds.w / 2, y: -targetY + bounds.h / 2 }, { animation: { duration: 300 } });
+      // Important: Only center the view when explicitly requested by a user, but since the user clicked the minimap, they want to go there.
+      // Make sure we take the canvas scale/zoom into account
+      const camera = editor.getCamera();
+      // Reverse calculate: to center on targetX, targetY, we need to set the screen origin 
+      // (camera x,y) to point such that target - (bounds.w/2 / scale) is the top-left coordinate.
+      const destX = -targetX + (bounds.w / 2) / camera.z;
+      const destY = -targetY + (bounds.h / 2) / camera.z;
+      editor.setCamera({ x: destX, y: destY, z: camera.z }, { animation: { duration: 300 } });
     } catch(e) {
       console.error("Minimap pan failed", e);
     }
