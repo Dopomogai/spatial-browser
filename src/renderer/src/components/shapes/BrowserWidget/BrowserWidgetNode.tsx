@@ -148,6 +148,8 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
         isVisible={widget.interactionState === 'active'} 
         minWidth={300} 
         minHeight={200}
+        handleStyle={{ width: 8, height: 8, borderRadius: 4, visibility: 'hidden' }} // Make the handles permanently invisible
+        lineStyle={{ borderWidth: 4, borderColor: 'transparent' }} // Make the lines transparent but thick enough to grab
         onResize={(e, params) => {
             updateWidgetData(id, { w: params.width, h: params.height })
         }} 
