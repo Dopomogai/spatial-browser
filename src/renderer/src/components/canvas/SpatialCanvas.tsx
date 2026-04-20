@@ -145,7 +145,7 @@ const CanvasContent = () => {
       window.removeEventListener('spawn-settings-widget', handleSpawnSettings)
       window.removeEventListener('spawn-canvases-widget', handleSpawnCanvases)
       window.removeEventListener('pan-to-widget' as any, handlePanToWidget)
-      window.electron?.ipcRenderer?.removeAllListeners('fullscreen-toggled')
+      window.electron?.ipcRenderer?.removeListener?.('fullscreen-toggled', handleFullscreenToggled)
     }
   }, [nodes, setCenter, setOmnibarOpen, getViewport])
 
