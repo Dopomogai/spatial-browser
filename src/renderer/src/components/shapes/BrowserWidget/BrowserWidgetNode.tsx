@@ -10,7 +10,7 @@ const isValidDataUrl = (str: string | undefined): boolean => {
   return str.startsWith('data:image/png;base64,') && str.length > 30; 
 }
 
-export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
+export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data }) => {
   const { updateWidgetData, removeWidget, isSpacebarHeld } = useCanvasStore()
   const widget = data as any // data mapped via AppNode in store
   const webviewRef = useRef<any>(null)
@@ -24,6 +24,12 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const { setNodes } = useReactFlow() // Natively resize nodes
+
+  // Local state for rapid resize dimension updates
+  const [localSize, setLocalSize] = useState<{ w: number; h: number } | null>(null);
+  
+  const currentW = localSize ? localSize.w : widget.w;
+  const currentH = localSize ? localSize.h : widget.h;
 
   // Hardware controls listening
   useEffect(() => {
@@ -200,11 +206,15 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
         lineStyle={{ borderWidth: 6, borderColor: 'transparent' }} 
         lineClassName="custom-resizer-line"
         onResize={(e, params) => {
-            updateWidgetData(id, { w: params.width, h: params.height })
+            setLocalSize({ w: params.width, h: params.height })
         }} 
+        onResizeEnd={(e, params) => {
+            setLocalSize(null)
+            updateWidgetData(id, { w: params.width, h: params.height })
+        }}
     />
     <div className="bg-surface-container-high rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.5)] border border-outline-variant/30 flex flex-col overflow-hidden relative group"
-         style={{ width: widget.w, height: widget.h }}
+         style={{ width: currentW, height: currentH }}
          onMouseEnter={() => setIsHovered(true)}
          onMouseLeave={() => setIsHovered(false)}
     >
@@ -217,7 +227,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
           <button 
             onClick={() => {
               // Save prev dimensions to restore safely!
-              updateWidgetData(id, { interactionState: 'minimized', w: 250, h: 48, tabHistoryW: widget.w, tabHistoryH: widget.h })
+              updateWidgetData(id, { interactionState: 'minimized', w: 250, h: 48, tabHistoryW: currentW, tabHistoryH: currentH })
             }} 
             className="w-3 h-3 rounded-full bg-tertiary hover:opacity-80"
           ></button>
@@ -389,4 +399,4 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
     </div>
     </>
   )
-}
+})
