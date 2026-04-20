@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useCanvasStore } from '../store/useCanvasStore'
 import { Plus, X, Globe, Undo, Redo, LayoutGrid, Settings } from 'lucide-react'
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
 export const TopTabBar: React.FC = () => {
     // Only subscribe to the specific parts of the store we need
@@ -36,8 +37,25 @@ export const TopTabBar: React.FC = () => {
         window.dispatchEvent(new CustomEvent('spawn-tab-center'))
     }
     
-    // Sort by created to keep tabs stable
-    const sortedWidgets = Object.values(widgets)
+    // Sort by created to keep tabs stable. We'll use order prop if it exists, otherwise fallback to object keys.
+    const [sortedWidgets, setSortedWidgets] = useState(Object.values(widgets));
+    
+    useEffect(() => {
+        const ws = Object.values(widgets);
+        // Simple stable sort based on an implied order index, falling back to ID to keep it stable
+        ws.sort((a,b) => (a.order || 0) - (b.order || 0));
+        setSortedWidgets(ws);
+    }, [widgets]);
+
+    const onDragEnd = (result: any) => {
+        if (!result.destination) return;
+        const items = Array.from(sortedWidgets);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+        
+        setSortedWidgets(items);
+        // We could also loop and update the `order` property in Zustand here for persistence
+    };
 
     return (
         <div className="absolute top-0 left-0 right-0 h-12 bg-surface_container_lowest border-b border-outline_variant/10 flex items-center px-4 z-50 shadow-md">
@@ -75,52 +93,71 @@ export const TopTabBar: React.FC = () => {
                 </button>
             </div>
 
-            {/* Middle: Tab List */}
-            <div className="flex flex-1 items-end h-full gap-1 overflow-x-auto overflow-y-hidden no-scrollbar pt-2">
-                {sortedWidgets.map(w => {
-                    let urlDisplay = 'New Tab'
-                    try {
-                        if (w.url && w.url !== 'about:blank') {
-                            urlDisplay = new URL(w.url).hostname.replace('www.', '')
-                        }
-                    } catch(e) {}
-                    
-                    const titleDisplay = w.title || urlDisplay
-
-                    return (
+            {/* Middle: Tab List with Drag and Drop */}
+            <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId="tabs" direction="horizontal">
+                    {(provided: any) => (
                         <div 
-                            key={w.id}
-                            onClick={(e) => handleFocus(w.id, e)}
-                            className={`
-                                h-9 min-w-[140px] max-w-[240px] flex items-center justify-between px-3 
-                                rounded-t-lg border-t border-l border-r border-outline_variant/10
-                                cursor-pointer transition-colors group flex-shrink-0
-                                ${w.interactionState === 'active' ? 'bg-surface_container_highest border-t-primary/30 text-primary shadow-[0_-4px_10px_rgba(0,0,0,0.2)] z-10' : 'bg-surface hover:bg-surface_container_high text-on_surface_variant z-0'}
-                            `}
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                            className="flex flex-1 items-end h-full gap-1 overflow-x-auto overflow-y-hidden no-scrollbar pt-2"
                         >
-                            <div className="flex items-center gap-2 overflow-hidden mr-2">
-                                <Globe size={12} className="flex-shrink-0 opacity-70" />
-                                <span className="text-xs truncate font-medium">
-                                    {titleDisplay}
-                                </span>
-                            </div>
-                        
+                            {sortedWidgets.map((w, index) => {
+                                let urlDisplay = 'New Tab'
+                                try {
+                                    if (w.url && w.url !== 'about:blank') {
+                                        urlDisplay = new URL(w.url).hostname.replace('www.', '')
+                                    }
+                                } catch(e) {}
+                                
+                                const titleDisplay = w.title || urlDisplay
+
+                                return (
+                                    <Draggable key={w.id} draggableId={w.id} index={index}>
+                                        {(provided: any, snapshot: any) => (
+                                            <div 
+                                                ref={provided.innerRef}
+                                                {...provided.draggableProps}
+                                                {...provided.dragHandleProps}
+                                                onClick={(e) => handleFocus(w.id, e)}
+                                                className={`
+                                                    h-9 min-w-[140px] max-w-[240px] flex items-center justify-between px-3 
+                                                    rounded-t-lg border-t border-l border-r border-outline_variant/10
+                                                    cursor-pointer transition-colors group flex-shrink-0
+                                                    ${w.interactionState === 'active' ? 'bg-surface_container_highest border-t-primary/30 text-primary shadow-[0_-4px_10px_rgba(0,0,0,0.2)] z-10' : 'bg-surface hover:bg-surface_container_high text-on_surface_variant z-0'}
+                                                    ${snapshot.isDragging ? 'shadow-2xl opacity-90 z-50 ring-2 ring-primary scale-105' : ''}
+                                                `}
+                                                style={provided.draggableProps.style}
+                                            >
+                                                <div className="flex items-center gap-2 overflow-hidden mr-2">
+                                                    <Globe size={12} className="flex-shrink-0 opacity-70" />
+                                                    <span className="text-xs truncate font-medium">
+                                                        {titleDisplay}
+                                                    </span>
+                                                </div>
+                                            
+                                                <button 
+                                                    onClick={(e) => handleDelete(e, w.id)}
+                                                    className="opacity-0 group-hover:opacity-100 hover:bg-white/10 p-1 rounded text-on_surface_variant hover:text-white transition-all flex-shrink-0"
+                                                >
+                                                    <X size={12} strokeWidth={3} />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </Draggable>
+                                )
+                            })}
+                            {provided.placeholder}
                             <button 
-                                onClick={(e) => handleDelete(e, w.id)}
-                                className="opacity-0 group-hover:opacity-100 hover:bg-white/10 p-1 rounded text-on_surface_variant hover:text-white transition-all flex-shrink-0"
+                                onClick={handleAdd}
+                                className="h-8 w-8 flex-shrink-0 flex flex-col items-center justify-center rounded-t-lg hover:bg-surface_container transition-colors mb-0 mx-1 text-on_surface_variant hover:text-white"
                             >
-                                <X size={12} strokeWidth={3} />
+                                <Plus size={18} strokeWidth={2.5} />
                             </button>
                         </div>
-                    )
-                })}
-                <button 
-                onClick={handleAdd}
-                className="h-8 w-8 flex-shrink-0 flex flex-col items-center justify-center rounded-t-lg hover:bg-surface_container transition-colors mb-0 mx-1 text-on_surface_variant hover:text-white"
-                >
-                    <Plus size={18} strokeWidth={2.5} />
-                </button>
-            </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
 
             {/* Right Controls: Undo / Redo */}
             <div className="flex items-center gap-2 pl-4 ml-4 border-l border-white/5 h-6">

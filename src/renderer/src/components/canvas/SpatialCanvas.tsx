@@ -134,6 +134,43 @@ export const SpatialCanvas: React.FC = () => {
     setContextMenuOpen(true)
     setContextMenuPos({ x: e.clientX, y: e.clientY })
   }
+
+  // Handle global events dispatched from TopTabBar or elsewhere
+  useEffect(() => {
+      const handleSpawnCenter = () => {
+          const editor = useCanvasStore.getState().editor;
+          if (editor) {
+              const bounds = editor.getViewportPageBounds();
+              useCanvasStore.getState().setOmnibarOpen(true, { x: bounds.midX, y: bounds.midY });
+          } else {
+              useCanvasStore.getState().setOmnibarOpen(true, { x: 0, y: 0 });
+          }
+      };
+
+      const handlePanToWidget = (e: any) => {
+          try {
+              const editor = useCanvasStore.getState().editor;
+              if (editor && e.detail?.id) {
+                  const widget = useCanvasStore.getState().widgets[e.detail.id];
+                  if (widget) {
+                      editor.setCameraOptions({ isLocked: false, constraints: { bounds: null } });
+                      editor.centerOnPoint({ x: widget.x + (widget.w/2), y: widget.y + (widget.h/2) }, { animation: { duration: 300 } });
+                  }
+              }
+          } catch(err) {
+              console.error(err);
+          }
+      };
+
+      window.addEventListener('spawn-tab-center', handleSpawnCenter);
+      window.addEventListener('pan-to-widget' as any, handlePanToWidget);
+
+      return () => {
+          window.removeEventListener('spawn-tab-center', handleSpawnCenter);
+          window.removeEventListener('pan-to-widget' as any, handlePanToWidget);
+      };
+  }, []);
+
   return (
     <div className="w-full h-full relative" style={{ background: '#131315' }} onContextMenu={handleContextMenu} onClick={() => setContextMenuOpen(false)}>
       <div 

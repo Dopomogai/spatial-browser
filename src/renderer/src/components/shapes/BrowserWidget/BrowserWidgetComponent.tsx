@@ -255,7 +255,7 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
 
   // ACTIVE STATE
   return (
-    <div className="w-full h-full bg-surface-container-high rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.5)] border border-outline-variant/30 flex flex-col overflow-hidden relative group no-drag-region">
+    <div className="w-full h-full bg-surface-container-high rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.5)] border border-outline-variant/30 flex flex-col overflow-hidden relative group">
       {/* Auto-hiding Top Bar */}
       <div 
         className="h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4 justify-between transition-transform duration-300 transform translate-y-0 opacity-100 z-20 group-hover:translate-y-0 group-hover:opacity-100 absolute top-0 w-full"
@@ -297,9 +297,7 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       {/* Webview Area */}
       <div className="flex-1 w-full bg-white relative mt-12">
         {/* Pan Hack Overlay */}
-        <div 
-          className={`absolute inset-0 z-10 ${isSpacebarHeld || isShiftHeld ? 'pointer-events-auto' : 'pointer-events-none'}`}
-        />
+        <div className="absolute inset-0 top-0 h-10 cursor-move pointer-events-auto" />
         
         <webview
           ref={webviewRef}

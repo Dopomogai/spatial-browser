@@ -25,32 +25,50 @@ export const Minimap: React.FC = () => {
 
   const handleMinimapClick = (e: React.MouseEvent<HTMLDivElement>) => {
     try {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
+      if (!editor) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
 
-        const cw = 160 // minimap width
-        const ch = 120 // minimap height
-        const pad = Math.min(cw, ch) * 0.1 
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      
+      const widgetList = Object.values(useCanvasStore.getState().widgets);
+      widgetList.forEach(w => {
+        if (w.x < minX) minX = w.x;
+        if (w.y < minY) minY = w.y;
+        if (w.x + w.w > maxX) maxX = w.x + w.w;
+        if (w.y + w.h > maxY) maxY = w.y + w.h;
+      });
 
-        const mapW = viewportBounds.maxX - viewportBounds.minX || 1000
-        const mapH = viewportBounds.maxY - viewportBounds.minY || 1000
+      const padding = 1000;
+      minX -= padding;
+      minY -= padding;
+      maxX += padding;
+      maxY += padding;
 
-        const scale = Math.min((cw - pad * 2) / mapW, (ch - pad * 2) / mapH)
+      const totalWidth = maxX - minX;
+      const totalHeight = maxY - minY;
 
-        const offX = (cw - mapW * scale) / 2
-        const offY = (ch - mapH * scale) / 2
+      const minimapWidth = 200;
+      const minimapHeight = 150;
 
-        const targetX = (clickX - offX) / scale + viewportBounds.minX
-        const targetY = (clickY - offY) / scale + viewportBounds.minY
+      const scaleX = minimapWidth / totalWidth;
+      const scaleY = minimapHeight / totalHeight;
+      let scale = Math.min(scaleX, scaleY);
+      if (scale === Infinity || isNaN(scale)) scale = 1;
 
-        // We center the camera on the target
-        const vBounds = editor.getViewportPageBounds()
-        editor.pan({ 
-            x: -targetX + vBounds.w / 2, 
-            y: -targetY + vBounds.h / 2 
-        }, { duration: 500 }) // animate pan 
-    } catch(e) {}
+      // Reverse the mapX/mapY mapping
+      const targetX = minX + (clickX / scale);
+      const targetY = minY + (clickY / scale);
+
+      editor.setCameraOptions({ isLocked: false, constraints: { bounds: null } });
+      editor.centerOnPoint({ x: targetX, y: targetY }, { animation: { duration: 300 } });
+    } catch(e) {
+      console.error("Minimap pan failed", e);
+    }
   }
 
   let minX = Infinity;
@@ -89,7 +107,7 @@ export const Minimap: React.FC = () => {
   const mapY = (y: number) => (y - minY) * scale;
 
   return (
-    <div className="absolute top-4 right-4 w-[200px] h-[150px] bg-[#131315]/80 backdrop-blur-2xl rounded-2xl border border-outline-variant/20 shadow-[0_12px_32px_rgba(255,255,255,0.1)] overflow-hidden z-50 pointer-events-auto">
+    <div className="absolute bottom-4 right-4 w-[200px] h-[150px] bg-[#131315]/80 backdrop-blur-2xl rounded-2xl border border-outline-variant/20 shadow-[0_12px_32px_rgba(255,255,255,0.1)] overflow-hidden z-50 pointer-events-auto cursor-crosshair transition-transform hover:scale-[1.02]" onClick={handleMinimapClick}>
       <div className="relative w-full h-full">
         {/* Draw all widgets */}
         {widgetList.map(widget => (
