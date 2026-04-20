@@ -5,8 +5,8 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
 export const TopTabBar: React.FC = () => {
     // Only subscribe to the specific parts of the store we need
-    const widgets = useCanvasStore(state => state.widgets)
-    const updateWidget = useCanvasStore(state => state.updateWidget)
+    const widgets = useCanvasStore(state => state.nodes)
+    const updateWidgetData = useCanvasStore(state => state.updateWidgetData)
     const addWidget = useCanvasStore(state => state.addWidget)
     const removeWidget = useCanvasStore(state => state.removeWidget)
     const undo = useCanvasStore(state => state.undo)
@@ -22,7 +22,7 @@ export const TopTabBar: React.FC = () => {
     const handleFocus = (id: string, e: React.MouseEvent) => {
         try {
             window.dispatchEvent(new CustomEvent('pan-to-widget', { detail: { id } }))
-            updateWidget(id, { interactionState: 'active' })
+            updateWidgetData(id, { interactionState: 'active' })
         } catch (err) {
             console.error('Failed to dispatch pan event', err)
         }
@@ -30,11 +30,6 @@ export const TopTabBar: React.FC = () => {
 
     const handleDelete = (e: React.MouseEvent, id: string) => {
         e.stopPropagation()
-        const editor = useCanvasStore.getState().editor;
-        if (editor) {
-            const shapeId = `shape:${id}` as any;
-            if (editor.getShape(shapeId)) editor.deleteShape(shapeId);
-        }
         removeWidget(id)
     }
 
@@ -43,12 +38,12 @@ export const TopTabBar: React.FC = () => {
     }
     
     // Sort by created to keep tabs stable. We'll use order prop if it exists, otherwise fallback to object keys.
-    const [sortedWidgets, setSortedWidgets] = useState(Object.values(widgets));
+    const [sortedWidgets, setSortedWidgets] = useState(widgets || []);
     
     useEffect(() => {
-        const ws = Object.values(widgets);
+        const ws = [...(widgets || [])];
         // Simple stable sort based on an implied order index, falling back to ID to keep it stable
-        ws.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+        ws.sort((a: any, b: any) => (a.data?.order || 0) - (b.data?.order || 0));
         setSortedWidgets(ws);
     }, [widgets]);
 
@@ -125,12 +120,12 @@ export const TopTabBar: React.FC = () => {
                             {sortedWidgets.map((w, index) => {
                                 let urlDisplay = 'New Tab'
                                 try {
-                                    if (w.url && w.url !== 'about:blank') {
-                                        urlDisplay = new URL(w.url).hostname.replace('www.', '')
+                                    if (w.data?.url && w.data.url !== 'about:blank') {
+                                        urlDisplay = new URL(w.data.url).hostname.replace('www.', '')
                                     }
                                 } catch(e) {}
                                 
-                                const titleDisplay = w.title || urlDisplay
+                                const titleDisplay = w.data?.title || urlDisplay
 
                                 return (
                                     <Draggable key={w.id} draggableId={w.id} index={index}>
@@ -144,7 +139,7 @@ export const TopTabBar: React.FC = () => {
                                                     h-9 min-w-[140px] max-w-[240px] flex items-center justify-between px-3 
                                                     rounded-t-lg border-t border-l border-r border-outline_variant/10
                                                     cursor-pointer transition-colors group flex-shrink-0
-                                                    ${w.interactionState === 'active' ? 'bg-surface_container_highest border-t-primary/30 text-primary shadow-[0_-4px_10px_rgba(0,0,0,0.2)] z-10' : 'bg-surface hover:bg-surface_container_high text-on_surface_variant z-0'}
+                                                    ${w.data?.interactionState === 'active' ? 'bg-surface_container_highest border-t-primary/30 text-primary shadow-[0_-4px_10px_rgba(0,0,0,0.2)] z-10' : 'bg-surface hover:bg-surface_container_high text-on_surface_variant z-0'}
                                                     ${snapshot.isDragging ? 'shadow-2xl opacity-90 z-50 ring-2 ring-primary scale-105' : ''}
                                                 `}
                                                 style={provided.draggableProps.style}
