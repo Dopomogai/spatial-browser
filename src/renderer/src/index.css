@@ -40,4 +40,9 @@
 .tl-grid line {
    stroke-dasharray: 2 4 !important;
 }
-.custom-resizer-handle { cursor: nwse-resize; position: absolute; z-index: 50; } .custom-resizer-handle.top.left { cursor: nwse-resize; } .custom-resizer-handle.top.right { cursor: nesw-resize; } .custom-resizer-handle.bottom.left { cursor: nesw-resize; } .custom-resizer-handle.bottom.right { cursor: nwse-resize; } .custom-resizer-handle:hover::after { content: ""; position: absolute; width: 16px; height: 16px; border: 2px solid #3B82F6; pointer-events: none; } .custom-resizer-handle.top.left:hover::after { top: -2px; left: -2px; border-right: none; border-bottom: none; } .custom-resizer-handle.top.right:hover::after { top: -2px; right: -2px; border-left: none; border-bottom: none; } .custom-resizer-handle.bottom.left:hover::after { bottom: -2px; left: -2px; border-right: none; border-top: none; } .custom-resizer-handle.bottom.right:hover::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+.custom-resizer-handle { cursor: nwse-resize; position: absolute; z-index: 50; } 
+.custom-resizer-handle.top.left { cursor: nwse-resize; transform: translate(-25%, -25%); width: 24px !important; height: 24px !important; } 
+.custom-resizer-handle.top.right { cursor: nesw-resize; transform: translate(25%, -25%); width: 24px !important; height: 24px !important; } 
+.custom-resizer-handle.bottom.left { cursor: nesw-resize; transform: translate(-25%, 25%); width: 24px !important; height: 24px !important; } 
+.custom-resizer-handle.bottom.right { cursor: nwse-resize; transform: translate(25%, 25%); width: 24px !important; height: 24px !important; } 
+.custom-resizer-handle:hover::after { content: ""; position: absolute; width: 100%; height: 100%; border: 3px solid rgba(59, 130, 246, 0.4); pointer-events: none; border-radius: 8px; box-sizing: border-box; }

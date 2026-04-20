@@ -33,48 +33,61 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
     return () => window.removeEventListener('shift-state-change' as any, handleShiftChange)
   }, [])
 
-  // Listen for navigation events to update URL
+  // Webview lifecycle and URL resolution logic
   useEffect(() => {
     if (!webviewRef.current) return
     const webview = webviewRef.current
 
-    const handleDomReady = () => setIsReady(true)
+    let isMounted = true;
+
+    const handleDomReady = () => {
+      if (!isMounted) return;
+      setIsReady(true)
+    }
+
+    const checkHistoryStates = () => {
+       if (!isMounted || !webviewRef.current?.getWebContentsId) return;
+       // Safety catch: Electron throws an error if Webview isn't attached to DOM yet
+       try {
+           setCanGoBack(webviewRef.current.canGoBack() || false)
+           setCanGoForward(webviewRef.current.canGoForward() || false)
+       } catch(err) { }
+    }
+
     const handleContextMenu = (e: any) => {
         // Prevent default double menu, but let us send IPC signal to main window menu if needed later.
         e.preventDefault() 
     }
 
     const handleDidNavigate = (e: any) => {
+      if (!isMounted) return;
       if (e.url !== widget.url) {
           updateWidgetData(id, { url: e.url })
           if (!isEditing) setEditingUrl(e.url)
       }
-      setCanGoBack(webviewRef.current?.canGoBack() || false)
-      setCanGoForward(webviewRef.current?.canGoForward() || false)
+      checkHistoryStates()
     }
     
     const handleDidNavigateInPage = (e: any) => {
+      if (!isMounted) return;
       if (e.url !== widget.url && e.isMainFrame) {
           updateWidgetData(id, { url: e.url })
           if (!isEditing) setEditingUrl(e.url)
       }
-      setCanGoBack(webviewRef.current?.canGoBack() || false)
-      setCanGoForward(webviewRef.current?.canGoForward() || false)
+      checkHistoryStates()
     }
 
     const handlePageTitleUpdated = (e: any) => {
+      if (!isMounted) return;
       if (e.title !== widget.title) updateWidgetData(id, { title: e.title })
     }
 
-    webview.addEventListener('did-start-loading', () => {
-         setCanGoBack(webviewRef.current?.canGoBack() || false)
-         setCanGoForward(webviewRef.current?.canGoForward() || false)
-    })
+    webview.addEventListener('did-start-loading', checkHistoryStates)
     webview.addEventListener('did-navigate', handleDidNavigate)
     webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage)
     webview.addEventListener('page-title-updated', handlePageTitleUpdated)
     // Inject window.ipcRenderer hook for context menu forwarding properly
-    webview.addEventListener('dom-ready', () => {
+    const handleDomReadyExecution = () => {
       handleDomReady()
       webview.executeJavaScript(`
         window.addEventListener('contextmenu', (e) => {
@@ -106,18 +119,21 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
           });
         });
       `)
-    })
+    }
+
+    webview.addEventListener('dom-ready', handleDomReadyExecution)
     webview.addEventListener('context-menu', handleContextMenu)
 
     return () => {
+      isMounted = false;
+      webview.removeEventListener('did-start-loading', checkHistoryStates)
       webview.removeEventListener('did-navigate', handleDidNavigate)
       webview.removeEventListener('did-navigate-in-page', handleDidNavigateInPage)
       webview.removeEventListener('page-title-updated', handlePageTitleUpdated)
-      webview.removeEventListener('dom-ready', handleDomReady)
+      webview.removeEventListener('dom-ready', handleDomReadyExecution)
       webview.removeEventListener('context-menu', handleContextMenu)
     }
-  }, [widget?.url, widget?.title, id, updateWidgetData])
-
+  }, [id, widget.url])
   // Screenshot logic remains identical, caching visuals to DB/Store
   useEffect(() => {
     if (widget.interactionState !== 'active' && webviewRef.current && isReady) {
@@ -304,7 +320,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
                  
                  <div className="absolute bottom-4 opacity-30 text-xs text-center flex flex-col gap-1 pointer-events-none">
                      <span>Dopomogai Spatial OS v1.5.0</span>
-                     <span>Chromium {process.versions?.chrome} • Electron {process.versions?.electron}</span>
+                     <span>Chromium {window.electron?.process?.chrome || ''} • Electron {window.electron?.process?.electron || ''}</span>
                  </div>
              </div>
         ) : (
