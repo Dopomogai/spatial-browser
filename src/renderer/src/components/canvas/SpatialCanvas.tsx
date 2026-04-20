@@ -269,13 +269,14 @@ const CanvasContent = () => {
   }
 
   return (
-    <div className="w-full h-full relative" onClick={() => setContextMenuOpen(false)} onPointerDown={() => setContextMenuOpen(false)}>
+    <div className="w-full h-full relative">
       
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onPaneClick={() => setContextMenuOpen(false)}
         onPaneContextMenu={onPaneContextMenu}
         onConnect={onConnect}
         onMoveEnd={(e, v) => onMoveEnd(e, v)}
