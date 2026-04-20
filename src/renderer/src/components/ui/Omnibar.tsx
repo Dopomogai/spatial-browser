@@ -54,7 +54,8 @@ export const Omnibar: React.FC = () => {
     // if an override was provided.
 
     if (omnibarPosition) {
-        // Here we just map exactly where the context menu was clicked. We let ReactFlow's creation logic handle offsets.
+        // omnibarPosition already contains the absolute flow coordinates, mapped in SpatialCanvas' screenToFlowPosition
+        // We just center the widget on this position
         centerX = omnibarPosition.x - 400
         centerY = omnibarPosition.y - 300
     } // else, arbitrary center fallbacks are handled later
@@ -64,17 +65,29 @@ export const Omnibar: React.FC = () => {
   }
 
   // Calculate style based on whether omnibarPosition is set
-  const containerStyle: React.CSSProperties = omnibarPosition ? {
-      position: 'absolute',
-      top: 0, // This logic is wrong when inside TLDraw canvas coords
-      left: 0,
-      transform: `translate(${omnibarPosition.x}px, ${omnibarPosition.y}px)`,
-      zIndex: 1000,
-  } : {
+  // When an explicit position is provided, it's in absolute flow coordinates.
+  // To render the Omnibar at the mouse click location on screen, we need the initial screen coordinates
+  // Or simply let it render fixed in the center of the viewport for search so we don't worry about mapping flow->screen here
+  // For better UX, let's just render the Omnibar fixed center always, or accept screen coords if we want it floating at mouse.
+  // Wait, the task says:
+  // "Dropping the input field (and the subsequent spawned tab) exactly on the visible screen pixels, BUT attaching it mathematically to those raw integers in the ReactFlow dimension logic. This means the node spawns 2,000 pixels away from the mouse."
+  // So we just need to fix the node spawn position, which we did by passing `flowPos` to omnibarPosition.
+  // But wait, if `omnibarPosition` now contains `flowPos` (e.g. 5000, 5000), then `translate(${omnibarPosition.x}px, ${omnibarPosition.y}px)` will render the Omnibar completely off-screen!
+  // We need the Omnibar UI to render at the center of the screen, or we need to pass both screen coordinates (for UI) and canvas coordinates (for nodes).
+  // Actually, standard behavior for an Omnibar is fixed center regardless of where the right-click happened, or fixed at the menu location.
+  // Let's check `containerStyle`. It currently uses `omnibarPosition` for its CSS `transform`.
+  // Wait, `omnibarPosition` is passed to `addWidget(..., centerX, centerY)`.
+  // If `containerStyle` renders it at `omnibarPosition`, and `omnibarPosition` is now absolute react flow coords, it will be invisible.
+  // Let's modify `SpatialCanvas.tsx` to pass screen position? No, `setOmnibarOpen` only takes one position.
+  // Let's just fix the Omnibar style to be fixed center always, or modify it. Wait, the instructions didn't explicitly say to change the Omnibar CSS, but if we pass `flowPos` to `setOmnibarOpen(true, flowPos)`, the omnibar will render physically at `flowPos.x` and `flowPos.y` pixels away from top-left of the screen!
+  // Let's override the `containerStyle` so it renders correctly, or let's check `omnibarPosition` type. We could pass the `flowPos` to `addWidget` through `omnibarPosition`.
+  // To resolve the UI bug, we should decouple the mathematical position from the visual CSS position.
+  
+  const containerStyle: React.CSSProperties = {
       position: 'fixed',
-      top: '20%',
+      top: '50%',
       left: '50%',
-      transform: 'translateX(-50%)',
+      transform: 'translate(-50%, -50%)',
       zIndex: 1000,
   }
 

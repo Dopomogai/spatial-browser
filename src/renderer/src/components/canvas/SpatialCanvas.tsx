@@ -34,13 +34,16 @@ const CanvasContent = () => {
   }, [])
 
   const [contextMenuOpen, setContextMenuOpen] = useState(false)
+  const [contextMenuScreenPos, setContextMenuScreenPos] = useState({ x: 0, y: 0 })
   const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 })
 
   const onPaneContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setContextMenuOpen(true);
-    setContextMenuPos({ x: e.clientX, y: e.clientY });
+    setContextMenuScreenPos({ x: e.clientX, y: e.clientY });
+    const flowPos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+    setContextMenuPos(flowPos);
   };
 
   // Handle global events dispatched from TopTabBar or elsewhere
@@ -273,8 +276,8 @@ const CanvasContent = () => {
       {contextMenuOpen && (
           <div className="absolute bg-[#242424] border border-white/10 shadow-[0_12px_32px_rgba(0,0,0,0.5)] rounded py-1 w-48 animate-in fade-in zoom-in duration-100 z-[9999]"
             style={{
-                top: contextMenuPos.y,
-                left: contextMenuPos.x,
+                top: contextMenuScreenPos.y,
+                left: contextMenuScreenPos.x,
             }}
             onClick={(e) => e.stopPropagation()}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
