@@ -124,6 +124,9 @@ const CanvasContent = () => {
         
         {/* We use ReactFlow's natively styled components, customized heavily to match LiquidGlass Dopomogai style */}
         <MiniMap 
+          onNodeClick={(e, node) => {
+              setCenter(node.position.x + (node.data?.w as number || 800) / 2, node.position.y + (node.data?.h as number || 600) / 2, { duration: 500, zoom: 1 })
+          }}
           nodeColor={(n: any) => {
               if(n.data?.interactionState === 'minimized') return '#FFB868';
               return '#4ADE80';

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
 import { Globe, X, Maximize2, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react'
-import { useReactFlow } from '@xyflow/react'
+import { NodeResizer, useReactFlow } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 
 const isValidDataUrl = (str: string | undefined): boolean => {
@@ -112,6 +112,15 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
   }
 
   return (
+    <>
+    <NodeResizer 
+        isVisible={widget.interactionState === 'active'} 
+        minWidth={300} 
+        minHeight={200}
+        onResize={(e, params) => {
+            updateWidgetData(id, { w: params.width, h: params.height })
+        }} 
+    />
     <div className="bg-surface-container-high rounded-2xl shadow-[0_24px_48px_rgba(0,0,0,0.5)] border border-outline-variant/30 flex flex-col overflow-hidden relative group"
          style={{ width: widget.w, height: widget.h }}
          onClick={(e) => e.stopPropagation()} // Prevents clicking the node from passing into the canvas background
@@ -198,7 +207,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
           </button>
         </div>
       )}
-
     </div>
+    </>
   )
 }
