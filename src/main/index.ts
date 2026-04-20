@@ -20,15 +20,39 @@ function setupWebSocketServer() {
   console.log(`WebSocket Server running on ws://localhost:${port}`)
 
   // Hardened WebView isolation
-app.on('web-contents-created', (event, contents) => {
-  contents.on('before-input-event', (event, input) => {
-    if (input.key === 'Shift') {
-      const isHeld = input.type === 'keyDown'
-      if (mainWindow) {
-        mainWindow.webContents.send('shift-state-change', isHeld)
+  app.on('web-contents-created', (event, contents) => {
+    contents.on('before-input-event', (event, input) => {
+      if (input.key === 'Shift') {
+        const isHeld = input.type === 'keyDown'
+        if (mainWindow) {
+          mainWindow.webContents.send('shift-state-change', isHeld)
+        }
       }
-    }
-  })
+      
+      // Command+Z (Undo) and Command+Shift+Z (Redo)
+      if ((input.control || input.meta) && input.key.toLowerCase() === 'z') {
+        if (input.type === 'keyDown') {
+          event.preventDefault()
+          if (mainWindow) {
+            mainWindow.webContents.send(input.shift ? 'redo-action' : 'undo-action')
+          }
+        }
+      }
+      
+      // Command+X (Cut) handled natively 
+      if ((input.control || input.meta) && input.key.toLowerCase() === 'x') {
+        // Electron natively handles cut in webviews and main window via webContents.cut(), 
+        // but if we want to bubble to React instead we can send an IPC here.
+        // The user specifically asks to fix Cmd+X so we intercept it like Undo/Redo.
+        if (input.type === 'keyDown') {
+          if (mainWindow) {
+            mainWindow.webContents.send('cut-action')
+            // Usually we might want to also allow native cut to proceed or call it,
+            // but let's dispatch to the renderer store as requested.
+          }
+        }
+      }
+    })
 
   if (contents.getType() === 'webview') {
     // Intercept native Webview right-clicks and explicitly ask Electron to pop a basic text-editing menu

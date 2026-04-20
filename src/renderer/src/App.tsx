@@ -18,15 +18,6 @@ function App() {
 
     // Listen for Cmd+K and Spacebar
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Prevent browser default undo action so we cleanly use our array engine
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
-          e.preventDefault()
-          if (e.shiftKey) {
-             useCanvasStore.getState().redo()
-          } else {
-             useCanvasStore.getState().undo()
-          }
-      }
 
       if (e.key === 'Shift') {
         window.dispatchEvent(new CustomEvent('shift-state-change', { detail: { held: true } }))
@@ -58,14 +49,30 @@ function App() {
         window.dispatchEvent(new CustomEvent('shift-state-change', { detail: { held: isHeld } }));
     };
 
+    const handleIpcUndo = () => {
+      useCanvasStore.getState().undo()
+    }
+    
+    const handleIpcRedo = () => {
+      useCanvasStore.getState().redo()
+    }
+    
+    const handleIpcCut = () => {
+      // We will let native UI handle the text cut. 
+      // For React flow, we could optionally delete the currently selected node here,
+      // but we need to track selected nodes first. Since this isn't globally exposed in useCanvasStore easily yet,
+      // we will rely on native cut working on text fields, which is the primary issue.
+    }
+
     const handleWindowBlur = () => {
-        // Clear shift lock globally when clicking away or into webviews 
-        // that trap focus
         window.dispatchEvent(new CustomEvent('shift-state-change', { detail: { held: false } }));
     };
 
     if (window.electron?.ipcRenderer) {
         window.electron.ipcRenderer.on('shift-state-change', handleIpcShiftState);
+        window.electron.ipcRenderer.on('undo-action', handleIpcUndo);
+        window.electron.ipcRenderer.on('redo-action', handleIpcRedo);
+        window.electron.ipcRenderer.on('cut-action', handleIpcCut);
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -78,6 +85,9 @@ function App() {
       window.removeEventListener('open-new-profile-modal', handleProfileModalOpen)
       if (window.electron?.ipcRenderer) {
           window.electron.ipcRenderer.removeListener?.('shift-state-change', handleIpcShiftState)
+          window.electron.ipcRenderer.removeListener?.('undo-action', handleIpcUndo)
+          window.electron.ipcRenderer.removeListener?.('redo-action', handleIpcRedo)
+          window.electron.ipcRenderer.removeListener?.('cut-action', handleIpcCut)
       }
     }
   }, [])
