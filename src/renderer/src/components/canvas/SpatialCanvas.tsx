@@ -51,9 +51,12 @@ const CanvasContent = () => {
           })
         }
       })
-      // Check for newly added shapes via Omnibar
-      Object.values(updates.changes.added).forEach((newShape: any) => {
-         // Not handled here to avoid infinite loops, adding is driven by Zustand
+      
+      // Cleanup deleted shapes from the React Zustand Store
+      Object.values(updates.changes.removed).forEach((deletedShape: any) => {
+        if (deletedShape.type === 'browser_widget') {
+          useCanvasStore.getState().removeWidget(deletedShape.props.widgetId)
+        }
       })
     }, { source: 'user', scope: 'document' })
     return () => unsubscribe()

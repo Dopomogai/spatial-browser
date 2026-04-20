@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { WebSocketServer } from 'ws'
@@ -115,9 +115,30 @@ app.on('window-all-closed', () => {
 
 // IPC for Cmd+K and other global events
 ipcMain.on('toggle-omnibar', (event) => {
-  // Pass it directly back to the focused window (the React app)
-  const win = BrowserWindow.getFocusedWindow()
+  const win = BrowserWindow.fromWebContents(event.sender)
   if (win) {
     win.webContents.send('toggle-omnibar')
+  }
+})
+
+ipcMain.on('show-webview-context-menu', (event, params) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return;
+
+  const template = [
+    { label: 'Reload Page', role: 'reload' as const },
+    { type: 'separator' as const },
+    { label: 'Copy', role: 'copy' as const },
+    { label: 'Paste', role: 'paste' as const },
+    { label: 'Cut', role: 'cut' as const },
+    { type: 'separator' as const },
+    { label: 'Select All', role: 'selectAll' as const }
+  ];
+  
+  const menu = Menu.buildFromTemplate(template);
+  if (params && params.x !== undefined && params.y !== undefined) {
+    menu.popup({ window: win, x: Math.round(params.x), y: Math.round(params.y) });
+  } else {
+    menu.popup({ window: win });
   }
 })

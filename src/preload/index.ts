@@ -38,6 +38,12 @@ if (process.contextIsolated) {
 
 // --- KEYBOARD TRAP SOLUTION ---
 // This handles keys when focus is inside a webview
+// Pass context menu right-clicks up to the main process natively
+window.addEventListener('contextmenu', (e) => {
+  e.preventDefault()
+  ipcRenderer.send('show-webview-context-menu', { x: e.clientX, y: e.clientY })
+})
+
 window.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
     // Send to host (React app) if this script is running inside a webview
