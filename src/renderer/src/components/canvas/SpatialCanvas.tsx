@@ -149,6 +149,7 @@ const CanvasContent = () => {
         
     const handleSpawnSettings = () => {
         const viewport = getViewport()
+        const scale = viewport.zoom
         const windowWidth = window.innerWidth
         const windowHeight = window.innerHeight
         const centerXV = windowWidth / 2
