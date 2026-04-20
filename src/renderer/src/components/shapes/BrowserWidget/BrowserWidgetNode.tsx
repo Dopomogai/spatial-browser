@@ -291,6 +291,28 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
                      </div>
                      
                      <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-3">
+                        <h3 className="font-semibold text-white">Oragai Copilot</h3>
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input defaultChecked type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
+                            <span className="text-sm group-hover:text-white transition-colors">Show Vision Action Boxes (Red/Green outlines)</span>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
+                            <span className="text-sm group-hover:text-white transition-colors">Auto-Execute suggested code</span>
+                        </label>
+                     </div>
+                     
+                     <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-4">
+                        <h3 className="font-semibold text-white">Database & Sync</h3>
+                        <button className="bg-primary/20 text-primary w-full py-2.5 rounded-lg border border-primary/20 font-medium hover:bg-primary hover:text-white transition-all text-sm outline-none">
+                            Force Manual Sync (Supabase)
+                        </button>
+                        <button className="bg-error/10 text-error w-full py-2.5 rounded-lg border border-error/20 font-medium hover:bg-error hover:text-white transition-all text-sm outline-none">
+                            Wipe Local Spatial DB cache
+                        </button>
+                     </div>
+
+                     <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-3">
                         <h3 className="font-semibold text-white">Advanced / Integrations</h3>
                         <label className="flex items-center gap-3 cursor-pointer group">
                             <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
