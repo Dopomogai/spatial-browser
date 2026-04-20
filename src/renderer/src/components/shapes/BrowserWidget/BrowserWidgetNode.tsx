@@ -53,11 +53,6 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
        } catch(err) { }
     }
 
-    const handleContextMenu = (e: any) => {
-        // Prevent default double menu, but let us send IPC signal to main window menu if needed later.
-        e.preventDefault() 
-    }
-
     const handleDidNavigate = (e: any) => {
       if (!isMounted) return;
       if (e.url !== widget.url) {
@@ -81,13 +76,9 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
       if (e.title !== widget.title) updateWidgetData(id, { title: e.title })
     }
 
-    webview.addEventListener('did-start-loading', checkHistoryStates)
-    webview.addEventListener('did-navigate', handleDidNavigate)
-    webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage)
-    webview.addEventListener('page-title-updated', handlePageTitleUpdated)
-    // Inject window.ipcRenderer hook for context menu forwarding properly
     const handleDomReadyExecution = () => {
       handleDomReady()
+      checkHistoryStates()
       webview.executeJavaScript(`
         window.addEventListener('contextmenu', (e) => {
           e.preventDefault();
@@ -120,8 +111,11 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
       `)
     }
 
+    webview.addEventListener('did-start-loading', checkHistoryStates)
+    webview.addEventListener('did-navigate', handleDidNavigate)
+    webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage)
+    webview.addEventListener('page-title-updated', handlePageTitleUpdated)
     webview.addEventListener('dom-ready', handleDomReadyExecution)
-    webview.addEventListener('context-menu', handleContextMenu)
 
     return () => {
       isMounted = false;
@@ -130,7 +124,6 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
       webview.removeEventListener('did-navigate-in-page', handleDidNavigateInPage)
       webview.removeEventListener('page-title-updated', handlePageTitleUpdated)
       webview.removeEventListener('dom-ready', handleDomReadyExecution)
-      webview.removeEventListener('context-menu', handleContextMenu)
     }
   }, [id, widget.url])
   // Screenshot logic remains identical, caching visuals to DB/Store
@@ -166,12 +159,14 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
   if (!widget) return null
 
   // Resize helper that updates React Flow's native internal dimension trackers
-  const expandWidget = () => {
-      updateWidgetData(id, { interactionState: 'active' });
-      // In React Flow, we resize simply by updating our custom store node width/height 
-      // or letting the CSS dictate the node's dimensions. Here we enforce it via w/h in state.
-      updateWidgetData(id, { w: 800, h: 600 });
-  }
+    const expandWidget = () => {
+        // Grab height from history so it restores fully (minus min bound safety)
+        updateWidgetData(id, { 
+            interactionState: 'active', 
+            w: Math.max(widget.tabHistoryW || 800, 300), 
+            h: Math.max(widget.tabHistoryH || 600, 200) 
+        })
+    }
 
   const handleUrlSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -222,7 +217,8 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
           <button onClick={() => removeWidget(id)} className="w-3 h-3 rounded-full bg-error hover:opacity-80"></button>
           <button 
             onClick={() => {
-              updateWidgetData(id, { interactionState: 'minimized', w: 250, h: 48 })
+              // Save prev dimensions to restore safely!
+              updateWidgetData(id, { interactionState: 'minimized', w: 250, h: 48, tabHistoryW: widget.w, tabHistoryH: widget.h })
             }} 
             className="w-3 h-3 rounded-full bg-tertiary hover:opacity-80"
           ></button>
