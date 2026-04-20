@@ -40,6 +40,11 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
     const handleDomReady = () => {
       setIsReady(true)
     }
+    
+    // Natively intercept context-menu on the webview so it doesn't spawn Chromium's default UI
+    const handleContextMenu = (e: any) => {
+        e.preventDefault()
+    }
 
     const handleDidNavigate = (e: any) => {
       // Always store the current active URL into the layout store so when this widget goes to sleep,
@@ -74,12 +79,14 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
     webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage)
     webview.addEventListener('page-title-updated', handlePageTitleUpdated)
     webview.addEventListener('dom-ready', handleDomReady)
+    webview.addEventListener('context-menu', handleContextMenu)
 
     return () => {
       webview.removeEventListener('did-navigate', handleDidNavigate)
       webview.removeEventListener('did-navigate-in-page', handleDidNavigateInPage)
       webview.removeEventListener('page-title-updated', handlePageTitleUpdated)
       webview.removeEventListener('dom-ready', handleDomReady)
+      webview.removeEventListener('context-menu', handleContextMenu)
     }
   }, [widget?.id, widget?.url, widget?.title, updateWidget])
 
@@ -198,7 +205,9 @@ export const BrowserWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
       </div>
 
       {/* Webview Area */}
-      <div className={`flex-1 w-full bg-white relative ${widget.interactionState === 'active' ? 'mt-12 opacity-100' : 'mt-0 opacity-0 pointer-events-none filter blur-sm'}`}>
+      <div className={`flex-1 w-full bg-white relative ${widget.interactionState === 'active' ? 'mt-12 opacity-100' : 'mt-0 opacity-0 pointer-events-none filter blur-sm'}`}
+           style={{ pointerEvents: widget.interactionState === 'active' ? 'auto' : 'none' }}
+      >
         
         {/* Pan Hack Overlay */}
         <div className={`absolute inset-0 top-0 h-10 ${widget.interactionState === 'active' ? 'cursor-move pointer-events-auto' : 'pointer-events-none'}`} />
