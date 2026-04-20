@@ -280,21 +280,24 @@ const isValidDataUrl = (str: string | undefined): boolean => {
         </div>
         <div className="flex gap-2 mr-4 text-on-surface-variant flex-shrink-0 border-r border-white/5 pr-4 justify-end">
           <button type="button" onClick={() => {
-              const viewport = window.electron ? null : null; // Hack to fix lint if needed, actually we just need store
               const id = `browser_${Date.now()}`
               const newNode = {
                   id,
                   type: 'browser_widget', 
-                  position: { x: positionX + 50, y: positionY + 50 },
+                  position: { x: (positionX || 0) + 50, y: (positionY || 0) + 50 },
                   data: {
                     ...widget,
-                    id: undefined,
+                    id: undefined, // ensure duplicate does not carry same ID in local block logic
                     interactionState: 'active',
                     lastActive: Date.now()
                   }
               }
-              const store = useCanvasStore.getState()
-              store.addNode(newNode)
+              // Zustand needs set() so we append it directly
+              useCanvasStore.setState(state => ({
+                  nodes: [...state.nodes, newNode],
+                  undoStack: [...state.undoStack, state.nodes].slice(-50),
+                  redoStack: []
+              }))
             }} className="hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10" title="Duplicate Tab">
             <Copy size={14} />
           </button>
