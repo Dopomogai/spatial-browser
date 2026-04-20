@@ -325,12 +325,6 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
                  </div>
              </div>
         ) : (
-                 <div className="absolute bottom-4 opacity-30 text-xs text-center flex flex-col gap-1 pointer-events-none">
-                     <span>Dopomogai Spatial OS v1.5.0</span>
-                     <span>Chromium {window.electron?.process?.chrome || ''} • Electron {window.electron?.process?.electron || ''}</span>
-                 </div>
-             </div>
-        ) : (
             <webview
               ref={webviewRef}
               src={widget.url}
