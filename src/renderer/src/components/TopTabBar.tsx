@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { useCanvasStore } from '../store/useCanvasStore'
-import { Settings, History, Search, Plus } from 'lucide-react'
+import { Settings, History, Search, Plus, Undo, Redo } from 'lucide-react'
 
 export const TopTabBar: React.FC = () => {
     // Only subscribe to the specific parts of the store we need
     const isTopTabBarVisible = useCanvasStore(state => state.isTopTabBarVisible)
+    const undo = useCanvasStore(state => state.undo)
+    const redo = useCanvasStore(state => state.redo)
+    const undoStack = useCanvasStore(state => state.undoStack)
+    const redoStack = useCanvasStore(state => state.redoStack)
     const [updater, setUpdater] = useState(0)
 
     // Force re-render when store updates specifically for top bar 
