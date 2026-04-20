@@ -64,8 +64,9 @@ export const Minimap: React.FC = () => {
       const targetX = minX + (clickX / scale);
       const targetY = minY + (clickY / scale);
 
-      editor.setCameraOptions({ isLocked: false, constraints: { bounds: null } });
-      editor.centerOnPoint({ x: targetX, y: targetY }, { animation: { duration: 300 } });
+      // Use native camera positioning to bypass constraints error
+      const bounds = editor.getViewportPageBounds();
+      editor.setCamera({ x: -targetX + bounds.w / 2, y: -targetY + bounds.h / 2 }, { animation: { duration: 300 } });
     } catch(e) {
       console.error("Minimap pan failed", e);
     }
