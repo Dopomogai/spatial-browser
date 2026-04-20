@@ -37,7 +37,12 @@ const CanvasContent = () => {
   const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 })
 
   const handleContextMenu = (e: React.MouseEvent) => {
+    // If the target originated from inside a node, DO NOT open the generic canvas menu
+    if ((e.target as HTMLElement).closest('.react-flow__node')) {
+        return;
+    }
     e.preventDefault()
+    e.stopPropagation()
     setContextMenuOpen(true)
     setContextMenuPos({ x: e.clientX, y: e.clientY })
   }
@@ -69,7 +74,7 @@ const CanvasContent = () => {
         const newNode: AppNode = {
             id,
             type: 'browser_widget', // Built via browser node routing to settings page for now
-            position: { x: visibleX + 100, y: visibleY + 100 },
+            position: { x: visibleX + Math.random()*100, y: visibleY + Math.random()*100 },
             data: {
               url: 'about:blank#settings', // Distinguishes it inside the Node
               title: 'Settings',

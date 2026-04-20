@@ -126,7 +126,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
       if (!editingUrl) return;
       
       let finalUrl = editingUrl.trim();
-      const domainRegex = /^((https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}|localhost):\d*/;
+      const domainRegex = /^(https?:\/\/)?((([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})|(localhost)|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))(:\d+)?(\/.*)?$/;
       
       if (domainRegex.test(finalUrl)) {
         if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
@@ -212,13 +212,34 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
       >
         <div className={`absolute inset-0 top-0 h-10 ${widget.interactionState === 'active' ? 'cursor-move pointer-events-auto custom-drag-handle' : 'pointer-events-none'}`} />
         
-        <webview
-          ref={webviewRef}
-          src={widget.url}
-          className={`w-full h-full border-none ${isSpacebarHeld || isShiftHeld ? 'pointer-events-none' : 'pointer-events-auto'}`}
-          partition="persist:main"
-          preload={`file://${(window as any).api?.getPreloadPath?.() || '../preload/index.js'}`}
-        />
+        {widget.url.startsWith('about:blank') ? (
+             <div className="w-full h-full bg-surface-container flex flex-col items-center justify-center text-on-surface-variant overflow-y-auto p-8">
+                 <h2 className="text-2xl font-bold mb-4 text-white">System Configuration</h2>
+                 <p className="text-sm opacity-70 mb-8 text-center max-w-sm">This internal dashboard is disconnected from the Chromium networking block.</p>
+                 
+                 <div className="w-full max-w-md space-y-4">
+                     <div className="bg-surface-container-highest p-4 rounded-xl border border-white/5">
+                        <h3 className="font-semibold text-white mb-2">Agent Debugging Mode</h3>
+                        <label className="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary focus:ring-offset-surface-container-highest" />
+                            <span className="text-sm">Enable visual action boxes overlay</span>
+                        </label>
+                     </div>
+                     <div className="bg-surface-container-highest p-4 rounded-xl border border-white/5">
+                        <h3 className="font-semibold text-white mb-2">Local Knowledge Base</h3>
+                        <button className="bg-primary/20 text-primary w-full py-2 rounded-lg font-medium hover:bg-primary/30 transition-colors">Force Sync Supabase Graph</button>
+                     </div>
+                 </div>
+             </div>
+        ) : (
+            <webview
+              ref={webviewRef}
+              src={widget.url}
+              className={`w-full h-full border-none ${isSpacebarHeld || isShiftHeld ? 'pointer-events-none' : 'pointer-events-auto'}`}
+              partition="persist:main"
+              preload={`file://${(window as any).api?.getPreloadPath?.() || '../preload/index.js'}`}
+            />
+        )}
       </div>
 
       {widget.interactionState === 'sleeping' && (
