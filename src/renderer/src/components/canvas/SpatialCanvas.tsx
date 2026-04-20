@@ -242,7 +242,7 @@ const CanvasContent = () => {
                 }}
                 className="w-full text-left px-3 py-2 text-sm text-on_surface_variant hover:text-white hover:bg-primary/20 transition-colors flex items-center gap-2"
               >
-                  <MousePointer2 size={14} /> Center View
+                  <Maximize size={14} /> Center View
               </button>
           </div>
       )}

@@ -255,22 +255,51 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
         <div className={`absolute inset-0 top-0 h-10 ${widget.interactionState === 'active' ? 'cursor-move pointer-events-auto custom-drag-handle' : 'pointer-events-none'}`} />
         
         {widget.url.startsWith('about:blank') ? (
-             <div className="w-full h-full bg-surface-container flex flex-col items-center justify-center text-on-surface-variant overflow-y-auto p-8">
-                 <h2 className="text-2xl font-bold mb-4 text-white">System Configuration</h2>
-                 <p className="text-sm opacity-70 mb-8 text-center max-w-sm">This internal dashboard is disconnected from the Chromium networking block.</p>
+             <div className="w-full h-full bg-surface-container flex flex-col items-center justify-center text-on_surface_variant overflow-y-auto p-4 cursor-auto relative">
+                 <div className="w-full max-w-lg mb-6 flex flex-col gap-2">
+                     <h2 className="text-2xl font-bold text-white text-center">Settings</h2>
+                     <p className="text-sm opacity-70 text-center">System preferences and AI integrations.</p>
+                 </div>
                  
-                 <div className="w-full max-w-md space-y-4">
-                     <div className="bg-surface-container-highest p-4 rounded-xl border border-white/5">
-                        <h3 className="font-semibold text-white mb-2">Agent Debugging Mode</h3>
-                        <label className="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary focus:ring-offset-surface-container-highest" />
-                            <span className="text-sm">Enable visual action boxes overlay</span>
+                 <div className="w-full max-w-lg space-y-4 px-2">
+                     <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-3">
+                        <h3 className="font-semibold text-white">General UI</h3>
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
+                            <span className="text-sm group-hover:text-white transition-colors">Show Tab Shadows</span>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input defaultChecked type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
+                            <span className="text-sm group-hover:text-white transition-colors">Enable Cinematic Auto-Focus (Zooming)</span>
                         </label>
                      </div>
-                     <div className="bg-surface-container-highest p-4 rounded-xl border border-white/5">
-                        <h3 className="font-semibold text-white mb-2">Local Knowledge Base</h3>
-                        <button className="bg-primary/20 text-primary w-full py-2 rounded-lg font-medium hover:bg-primary/30 transition-colors">Force Sync Supabase Graph</button>
+                     
+                     <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-3">
+                        <h3 className="font-semibold text-white">Oragai Copilot</h3>
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input defaultChecked type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
+                            <span className="text-sm group-hover:text-white transition-colors">Show Vision Action Boxes (Red/Green outlines)</span>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black text-primary focus:ring-primary accent-primary" />
+                            <span className="text-sm group-hover:text-white transition-colors">Auto-Execute suggested code</span>
+                        </label>
                      </div>
+
+                     <div className="bg-surface-container-highest p-5 rounded-xl border border-white/5 flex flex-col gap-4">
+                        <h3 className="font-semibold text-white">Database & Sync</h3>
+                        <button className="bg-primary/20 text-primary w-full py-2.5 rounded-lg border border-primary/20 font-medium hover:bg-primary hover:text-white transition-all text-sm outline-none">
+                            Force Manual Sync (Supabase)
+                        </button>
+                        <button className="bg-error/10 text-error w-full py-2.5 rounded-lg border border-error/20 font-medium hover:bg-error hover:text-white transition-all text-sm outline-none">
+                            Wipe Local Spatial DB cache
+                        </button>
+                     </div>
+                 </div>
+                 
+                 <div className="absolute bottom-4 opacity-30 text-xs text-center flex flex-col gap-1 pointer-events-none">
+                     <span>Dopomogai Spatial OS v1.5.0</span>
+                     <span>Chromium {process.versions?.chrome} • Electron {process.versions?.electron}</span>
                  </div>
              </div>
         ) : (
