@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Tldraw, useEditor, createShapeId } from 'tldraw'
-import { Plus } from 'lucide-react'
+import { Plus, MousePointer2 } from 'lucide-react'
 import 'tldraw/tldraw.css'
 import { BrowserWidgetShapeUtil } from '../shapes/BrowserWidget/BrowserWidgetShapeUtil'
 import { CanvasesWidgetShapeUtil } from '../shapes/CanvasesWidget/CanvasesWidgetShapeUtil'
