@@ -151,7 +151,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     
     set((state) => {
       const newNodes = [...state.nodes, newNode]
-      const newState = { nodes: newNodes }
+      const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
+      const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
       persistState({ ...state, ...newState })
       return newState
     })
@@ -173,7 +174,13 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         return node;
       });
 
-      const newState = { nodes: newNodes }
+      // Track size modifications or major interactions to history
+      let newUndoStack = state.undoStack
+      if ('w' in dataUpdates || 'h' in dataUpdates || 'interactionState' in dataUpdates) {
+          newUndoStack = [...state.undoStack, state.nodes].slice(-50)
+      }
+
+      const newState = { nodes: newNodes, undoStack: newUndoStack }
       persistState({ ...state, ...newState })
       return newState
     })
@@ -184,8 +191,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       const newNodes = state.nodes.filter(n => n.id !== id)
       // also remove any edges connected to this widget if we add them later
       const newEdges = state.edges.filter(e => e.source !== id && e.target !== id)
+      const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       
-      const newState = { nodes: newNodes, edges: newEdges }
+      const newState = { nodes: newNodes, edges: newEdges, undoStack: newUndoStack, redoStack: [] }
       persistState({ ...state, ...newState })
       return newState
     })

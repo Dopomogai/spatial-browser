@@ -4,6 +4,7 @@ import type { NodeTypes } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { BrowserWidgetNode } from '../shapes/BrowserWidget/BrowserWidgetNode'
 import { useCanvasStore } from '../../store/useCanvasStore'
+import type { AppNode } from '../../store/useCanvasStore'
 import { Plus, MousePointer2 } from 'lucide-react'
 import { Omnibar } from '../ui/Omnibar'
 
@@ -58,14 +59,48 @@ const CanvasContent = () => {
         } catch(err) {}
     }
 
+    const handleSpawnSettings = () => {
+        const id = `settings_widget_${Date.now()}`
+        const viewport = getViewport()
+        const scale = viewport.zoom
+        const visibleX = -viewport.x / scale
+        const visibleY = -viewport.y / scale
+        
+        const newNode: AppNode = {
+            id,
+            type: 'browser_widget', // Built via browser node routing to settings page for now
+            position: { x: visibleX + 100, y: visibleY + 100 },
+            data: {
+              url: 'about:blank#settings', // Distinguishes it inside the Node
+              title: 'Settings',
+              faviconUrl: '',
+              screenshotBase64: null,
+              w: 400,
+              h: 300,
+              interactionState: 'active',
+              lastActive: Date.now(),
+              tabHistory: ['about:blank#settings'],
+              currentHistoryIndex: 0
+            }
+        }
+        
+        useCanvasStore.setState((state) => ({
+            nodes: [...state.nodes, newNode],
+            undoStack: [...state.undoStack, state.nodes].slice(-50),
+            redoStack: []
+        }))
+    }
+
     window.addEventListener('spawn-tab-center', handleSpawnCenter)
+    window.addEventListener('spawn-settings-widget', handleSpawnSettings)
     window.addEventListener('pan-to-widget' as any, handlePanToWidget)
 
     return () => {
       window.removeEventListener('spawn-tab-center', handleSpawnCenter)
+      window.removeEventListener('spawn-settings-widget', handleSpawnSettings)
       window.removeEventListener('pan-to-widget' as any, handlePanToWidget)
     }
-  }, [nodes, setCenter, setOmnibarOpen])
+  }, [nodes, setCenter, setOmnibarOpen, getViewport])
 
   // Sleeping tab hysteresis (We keep the bounding boxes logic but use ReactFlow's zoom!)
   useEffect(() => {

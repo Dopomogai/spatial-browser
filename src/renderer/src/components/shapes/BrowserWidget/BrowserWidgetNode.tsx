@@ -4,6 +4,7 @@ import { Globe, X, Maximize2, ChevronLeft, ChevronRight, RotateCw } from 'lucide
 import { NodeResizer, useReactFlow } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 
+// Helper to validate Base64 string bounds
 const isValidDataUrl = (str: string | undefined): boolean => {
   if (!str) return false;
   return str.startsWith('data:image/png;base64,') && str.length > 30; 
@@ -122,7 +123,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
 
   const handleUrlSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      if (!editingUrl || !webviewRef.current) return;
+      if (!editingUrl) return;
       
       let finalUrl = editingUrl.trim();
       const domainRegex = /^((https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}|localhost):\d*/;
@@ -137,7 +138,8 @@ export const BrowserWidgetNode: React.FC<NodeProps> = ({ id, data }) => {
 
       setEditingUrl(finalUrl)
       setIsEditing(false);
-      webviewRef.current.loadURL(finalUrl);
+      updateWidgetData(id, { url: finalUrl })
+      if (webviewRef.current) webviewRef.current.loadURL(finalUrl);
   }
 
   return (
