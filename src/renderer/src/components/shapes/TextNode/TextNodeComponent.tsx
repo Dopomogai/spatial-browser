@@ -33,6 +33,7 @@ export const TextNodeComponent = ({ id, data, selected }: { id: string, data: Re
           ${selected ? 'ring-2 ring-primary/50 rounded-lg' : ''}
         `}
         style={{ width: w, minHeight: h }}
+        onPointerDown={() => window.dispatchEvent(new Event('close-context-menu'))}
       >
         <textarea
             ref={textareaRef}

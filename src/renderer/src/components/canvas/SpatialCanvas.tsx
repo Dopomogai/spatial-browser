@@ -18,8 +18,8 @@ const nodeTypes: NodeTypes = {
 }
 
 const CanvasContent = () => {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, updateWidgetData } = useCanvasStore()
-  const { setCenter, screenToFlowPosition, getZoom, getViewport } = useReactFlow()
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, updateWidgetData, lastViewport } = useCanvasStore()
+  const { setCenter, screenToFlowPosition, getZoom, getViewport, setViewport } = useReactFlow()
   const { setOmnibarOpen, isSpacebarHeld } = useCanvasStore()
   
   // Track shift explicitly to manipulate scroll behaviors
@@ -35,6 +35,13 @@ const CanvasContent = () => {
     }
   }, [])
 
+  // Restore initial viewport from the store explicitly
+  useEffect(() => {
+    if (lastViewport) {
+      setViewport({ x: lastViewport.x, y: lastViewport.y, zoom: lastViewport.zoom });
+    }
+  }, [setViewport]);
+
   const [contextMenuOpen, setContextMenuOpen] = useState(false)
   const [contextMenuScreenPos, setContextMenuScreenPos] = useState({ x: 0, y: 0 })
   const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 })
@@ -47,6 +54,16 @@ const CanvasContent = () => {
     const flowPos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
     setContextMenuPos(flowPos);
   };
+
+  useEffect(() => {
+    const handleCloseContextMenu = () => setContextMenuOpen(false);
+    window.addEventListener('blur', handleCloseContextMenu);
+    window.addEventListener('close-context-menu', handleCloseContextMenu);
+    return () => {
+      window.removeEventListener('blur', handleCloseContextMenu);
+      window.removeEventListener('close-context-menu', handleCloseContextMenu);
+    };
+  }, []);
 
   // Handle global events dispatched from TopTabBar or elsewhere
   useEffect(() => {
@@ -122,14 +139,16 @@ const CanvasContent = () => {
         const widget = nodes.find(n => n.id === tabId)
         if (!widget) return;
         
+        useCanvasStore.getState().setTopTabBarVisible(!isFullScreen);
+        
         if (isFullScreen) {
             // setCenter takes x,y of the exact point to focus on, and zoom.
             // When putting the tab center at widget.x + w/2 and widget.y + h/2, with zoom 1, 
             // the innerWidth and innerHeight of the browser matches the widget size exactly,
             // so it naturally frames it perfectly.
             setCenter(
-                widget.position.x + (window.innerWidth / 2) + 24,
-                widget.position.y + (window.innerHeight / 2) + 24,
+                widget.position.x + (widget.data.w / 2),
+                widget.position.y + (widget.data.h / 2),
                 { zoom: 1, duration: 300 }
             )
         } else {
@@ -279,18 +298,20 @@ const CanvasContent = () => {
         />
         
         {/* We use ReactFlow's natively styled components, customized heavily to match LiquidGlass Dopomogai style */}
-        <MiniMap 
-          onNodeClick={(e, node) => {
-              setCenter(node.position.x + (node.data?.w as number || 800) / 2, node.position.y + (node.data?.h as number || 600) / 2, { duration: 500, zoom: 1 })
-          }}
-          nodeColor={(n: any) => {
-              if(n.data?.interactionState === 'minimized') return '#FFB868';
-              return '#4ADE80';
-          }}
-          nodeBorderRadius={2}
-          className="!absolute !bottom-4 !right-4 !w-[200px] !h-[150px] !bg-[#131315]/80 !backdrop-blur-2xl !rounded-2xl !border !border-outline-variant/20 shadow-[0_12px_32px_rgba(255,255,255,0.1)] !overflow-hidden !z-50 cursor-crosshair transition-transform hover:scale-[1.02]"
-          maskColor="rgba(255, 255, 255, 0.1)"
-        />
+        {useCanvasStore((state) => state.isTopTabBarVisible) && (
+          <MiniMap 
+            onNodeClick={(e, node) => {
+                setCenter(node.position.x + (node.data?.w as number || 800) / 2, node.position.y + (node.data?.h as number || 600) / 2, { duration: 500, zoom: 1 })
+            }}
+            nodeColor={(n: any) => {
+                if(n.data?.interactionState === 'minimized') return '#FFB868';
+                return '#4ADE80';
+            }}
+            nodeBorderRadius={2}
+            className="!absolute !bottom-4 !right-4 !w-[200px] !h-[150px] !bg-[#131315]/80 !backdrop-blur-2xl !rounded-2xl !border !border-outline-variant/20 shadow-[0_12px_32px_rgba(255,255,255,0.1)] !overflow-hidden !z-50 cursor-crosshair transition-transform hover:scale-[1.02]"
+            maskColor="rgba(255, 255, 255, 0.1)"
+          />
+        )}
 
         {/* Optional dev tool, hidden for V1 - let's add back hotkeys later if desired 
         <Controls className="!bg-[#242424] !border !border-white/10 !fill-white" /> */}

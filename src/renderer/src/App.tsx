@@ -105,7 +105,7 @@ function App() {
 
 
       <div className="flex-1 w-full relative no-drag-region">
-        <TopTabBar />
+        {isTopTabBarVisible && <TopTabBar />}
         <SpatialCanvas />
       </div>
 

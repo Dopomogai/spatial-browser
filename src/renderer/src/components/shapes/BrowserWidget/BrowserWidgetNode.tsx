@@ -221,6 +221,7 @@ const isValidDataUrl = (str: string | undefined): boolean => {
          style={{ width: currentW, height: currentH }}
          onMouseEnter={() => setIsHovered(true)}
          onMouseLeave={() => setIsHovered(false)}
+         onPointerDown={() => window.dispatchEvent(new Event('close-context-menu'))}
     >
       
       <div className={`h-12 bg-surface-container-lowest/90 backdrop-blur border-b border-surface/50 flex items-center px-4 justify-between transition-transform duration-300 transform z-20 absolute top-0 w-full custom-drag-handle
@@ -284,7 +285,7 @@ const isValidDataUrl = (str: string | undefined): boolean => {
               const newNode = {
                   id,
                   type: 'browser_widget', 
-                  position: { x: (positionX || 0) + 50, y: (positionY || 0) + 50 },
+                position: { x: (positionX || 0) + 50, y: (positionY || 0) + 50 },
                   data: {
                     ...widget,
                     id: undefined, // ensure duplicate does not carry same ID in local block logic
