@@ -1,0 +1,67 @@
+--- a/src/renderer/src/store/useCanvasStore.ts
++++ b/src/renderer/src/store/useCanvasStore.ts
+@@ -8,7 +8,7 @@
+ 
+-declare const supabase: any;
++import { supabase } from '../lib/supabase'
+ 
+ export type WidgetState = 'active' | 'sleeping' | 'minimized'
+ 
+@@ -370,11 +370,55 @@
+ 
+     // Local persistence (V2 uses new key to avoid clashing with V1 TLDraw store)
+     idbSet('spatial-canvas-v2-state', stateToSave).catch(console.error)
+     
+     if (state.currentProfileId && typeof supabase !== 'undefined' && supabase) {
+-        // Sync spatial_workspaces...
++        // Reconcile and push to the specific `spatial_os` SSOT
++        syncToSupabase(state)
+     }
+   }, 1000)
+ }
++
++let lastSyncedNodes: AppNode[] = []
++
++async function syncToSupabase(state: CanvasStore) {
++  if (!state.currentProfileId) return
++  
++  try {
++    // 1. Sync Workspace Base Configuration
++    await supabase
++      .schema('spatial_os')
++      .from('spatial_workspaces')
++      .upsert({
++        id: state.currentProfileId,
++        name: state.profiles.find(p => p.id === state.currentProfileId)?.name || 'Default Profile',
++        theme: state.theme,
++        viewport_x: state.lastViewport.x,
++        viewport_y: state.lastViewport.y,
++        viewport_zoom: state.lastViewport.zoom,
++        updated_at: new Date().toISOString()
++      })
++      
++    // 2. Prepare widgets for delta-check
++    const currentWidgets = state.nodes.filter(n => n.type === 'browser_widget') as BrowserAppNode[]
++    
++    // Push widgets
++    if (currentWidgets.length > 0) {
++        const widgetPayload = currentWidgets.map(w => ({
++            id: w.id,
++            workspace_id: state.currentProfileId,
++            url: w.data.url,
++            title: w.data.title,
++            x: w.position.x,
++            y: w.position.y,
++            width: w.data.w,
++            height: w.data.h,
++            interaction_state: w.data.interactionState,
++            updated_at: new Date().toISOString()
++        }))
++        
++        await supabase.schema('spatial_os').from('spatial_widgets').upsert(widgetPayload)
++    }
++    
++  } catch (error) {
++    console.error('Failed to sync to Supabase SSOT:', error)
++  }
++}
