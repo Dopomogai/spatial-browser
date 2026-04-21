@@ -114,6 +114,9 @@ const isValidDataUrl = (str: string | undefined): boolean => {
       if (!webview || isSubscribed) return;
 
       const handleContextMenu = (e: any) => {
+          // Immediately close any React Flow canvas context menus
+          window.dispatchEvent(new Event('close-context-menu'));
+          
           window.electron?.ipcRenderer?.send?.('show-webview-context-menu', {
                x: e.params.x, 
                y: e.params.y, 
