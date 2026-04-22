@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
 
 // A pure HTML textarea adapted for the spatial canvas.
-export const TextNodeComponent = ({ id, data, selected }: { id: string, data: Record<string, any>, selected: boolean }) => {
+export const TextNodeComponent = React.memo(({ id, data, selected }: { id: string, data: Record<string, any>, selected: boolean }) => {
   const updateWidgetData = useCanvasStore(state => state.updateWidgetData)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -88,4 +88,4 @@ export const TextNodeComponent = ({ id, data, selected }: { id: string, data: Re
       </div>
     </>
   )
-}
+})

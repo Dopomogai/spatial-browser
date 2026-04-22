@@ -61,6 +61,9 @@ export interface CanvasStore {
   currentProfileId: string
   profiles: WorkspaceProfile[]
   
+  activeNodeIds: string[]
+  calculateCulling: () => void
+  
   // UI Interaction State
   isOmnibarOpen: boolean
   isSpacebarHeld: boolean
@@ -92,6 +95,9 @@ export interface CanvasStore {
   setOmnibarOpen: (open: boolean, position?: { x: number; y: number } | null) => void
   setSpacebarHeld: (held: boolean) => void
 
+  activeNodeIds: string[]
+  calculateCulling: () => void
+
   lastViewport: { x: number; y: number; zoom: number }
   setLastViewport: (viewport: { x: number; y: number; zoom: number }) => void
   loadInitialState: () => Promise<void>
@@ -109,6 +115,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   edges: [],
   currentProfileId: 'default',
   profiles: [{ id: 'default', name: 'Default Profile', nodes: [], edges: [] }],
+  activeNodeIds: [],
   isOmnibarOpen: false,
   omnibarPosition: null, // this holds physical canvas coordinates, NOT visual css integers!
  isSpacebarHeld: false,
@@ -120,6 +127,35 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   lastViewport: { x: 0, y: 0, zoom: 1 },
 
   setTheme: (theme) => set({ theme }),
+
+  calculateCulling: () => {
+    const { lastViewport, nodes } = get();
+    
+    // Culling viewport: Add a generous margin of 1 screen width/height around the viewed area
+    // to let nodes "warm up" before they actually enter the screen.
+    const vpX = -lastViewport.x / lastViewport.zoom;
+    const vpY = -lastViewport.y / lastViewport.zoom;
+    const vpW = window.innerWidth / lastViewport.zoom;
+    const vpH = window.innerHeight / lastViewport.zoom;
+
+    const marginX = vpW;
+    const marginY = vpH;
+
+    const cullBox = {
+      x1: vpX - marginX,
+      y1: vpY - marginY,
+      x2: vpX + vpW + marginX,
+      y2: vpY + vpH + marginY
+    };
+
+    const activeIds = nodes.filter(node => {
+      const w = node.data.w as number || 300;
+      const h = node.data.h as number || 200;
+      return !(node.position.x > cullBox.x2 || node.position.x + w < cullBox.x1 || node.position.y > cullBox.y2 || node.position.y + h < cullBox.y1);
+    }).map(n => n.id);
+
+    set({ activeNodeIds: activeIds });
+  },
 
   undoStack: [],
   redoStack: [],
@@ -362,6 +398,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
   setLastViewport: (viewport) => {
     set({ lastViewport: viewport })
+    get().calculateCulling()
     persistState(get())
   },
 

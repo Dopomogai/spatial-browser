@@ -11,8 +11,11 @@ const isValidDataUrl = (str: string | undefined): boolean => {
   return str.startsWith('data:image/png;base64,') && str.length > 30; 
 }
 
- export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data, positionX, positionY }) => {
-   const { updateWidgetData, removeWidget, isSpacebarHeld, defaultTabWidth, defaultTabHeight, setDefaultTabSize } = useCanvasStore()
+export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data, positionX, positionY }) => {
+   const { updateWidgetData, removeWidget, isSpacebarHeld, defaultTabWidth, defaultTabHeight, setDefaultTabSize, activeNodeIds } = useCanvasStore()
+   
+   // Hot/Warm Culling Tier logic
+   const isActiveInCullBox = activeNodeIds.includes(id)
    const widget = data as any // data mapped via AppNode in store
    const webviewRef = useRef<any>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -143,7 +146,7 @@ const isValidDataUrl = (str: string | undefined): boolean => {
 
   // Screenshot logic remains identical, caching visuals to DB/Store
   useEffect(() => {
-    if (widget.interactionState !== 'active' && webviewRef.current && isReady) {
+    if ((widget.interactionState !== 'active' || !isActiveInCullBox) && webviewRef.current && isReady) {
       if (webviewRef.current.capturePage) {
         webviewRef.current.capturePage().then((image: any) => {
             const dataUrl = image.toDataURL();
@@ -151,7 +154,7 @@ const isValidDataUrl = (str: string | undefined): boolean => {
         }).catch(console.error)
       }
     }
-  }, [widget?.interactionState, id, updateWidgetData, isReady])
+  }, [widget?.interactionState, isActiveInCullBox, id, updateWidgetData, isReady])
 
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -342,13 +345,27 @@ const isValidDataUrl = (str: string | undefined): boolean => {
                 </div>
              </React.Fragment>
         ) : (
-            <webview
-              ref={webviewRef}
-              src={widget.url}
-              className={`w-full h-full border-none ${isSpacebarHeld || isShiftHeld ? 'pointer-events-none' : 'pointer-events-auto'}`}
-              partition="persist:main"
-              preload={`file://${(window as any).api?.getPreloadPath?.() || '../preload/index.js'}`}
-            />
+            <>
+              {(!isActiveInCullBox && widget.interactionState === 'active') ? (
+                  <div className="absolute inset-0 z-30 bg-[#131315] flex flex-col overflow-hidden">
+                    <div className="flex-1 w-full bg-black relative flex items-center justify-center overflow-hidden">
+                      {widget.screenshotBase64 ? (
+                        <img src={widget.screenshotBase64} alt="site" className="absolute inset-0 w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-white/50">Warming up...</span>
+                      )}
+                    </div>
+                  </div>
+              ) : (
+                  <webview
+                    ref={webviewRef}
+                    src={widget.url}
+                    className={`w-full h-full border-none ${isSpacebarHeld || isShiftHeld ? 'pointer-events-none' : 'pointer-events-auto'}`}
+                    partition="persist:main"
+                    preload={`file://${(window as any).api?.getPreloadPath?.() || '../preload/index.js'}`}
+                  />
+              )}
+            </>
         )}
       </div>
 
