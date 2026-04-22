@@ -36,6 +36,17 @@ export interface TextNodeData extends Record<string, unknown> {
 }
 
 // React Flow strictly separates geometric math (Node) from business logic (data)
+export interface SpatialTimelineEvent {
+  id?: string;
+  spatial_workspace_id: string;
+  widget_id: string;
+  agent_id?: string | null;
+  action_type: string;
+  old_state: any;
+  new_state: any;
+  timestamp?: string;
+}
+
 export type BrowserAppNode = Node<BrowserWidgetData, 'browser_widget'>;
 export type TextAppNode = Node<TextNodeData, 'text_node'>;
 export type AppNode = BrowserAppNode | TextAppNode;
@@ -103,6 +114,10 @@ export interface CanvasStore {
   activeNodeIds: string[]
   calculateCulling: () => void
 
+  // Sync Engine State
+  pendingSpatialEvents: SpatialTimelineEvent[]
+  flushSyncQueue: () => void
+
   lastViewport: { x: number; y: number; zoom: number }
   setLastViewport: (viewport: { x: number; y: number; zoom: number }) => void
   loadInitialState: () => Promise<void>
@@ -112,8 +127,42 @@ export interface CanvasStore {
 let saveTimeout: any
 
 export const useCanvasStore = create<CanvasStore>((set, get) => {
+  const queueEvent = (widgetId: string, actionType: string, oldState: any, newState: any) => {
+    const { currentProfileId, pendingSpatialEvents } = get();
+    
+    const event: SpatialTimelineEvent = {
+        spatial_workspace_id: currentProfileId,
+        widget_id: widgetId,
+        action_type: actionType,
+        old_state: oldState,
+        new_state: newState,
+        timestamp: new Date().toISOString()
+    };
+    
+    set({
+        pendingSpatialEvents: [...pendingSpatialEvents, event]
+    });
+  };
 
   return {
+  pendingSpatialEvents: [],
+  flushSyncQueue: async () => {
+    const queue = get().pendingSpatialEvents;
+    if (queue.length === 0) return;
+
+    // Clear queue locally
+    set({ pendingSpatialEvents: [] });
+
+    try {
+      // TODO: supabase.from('spatial_timeline').insert(queue)
+      console.log('Flushing spatial timeline events:', queue);
+    } catch (e) {
+      console.error('Failed to flush sync queue', e);
+      // Push back to queue if failed (simple retry logic)
+      set((state) => ({ pendingSpatialEvents: [...queue, ...state.pendingSpatialEvents] }));
+    }
+  },
+
   showCanvasGrid: true,
   toggleCanvasGrid: () => set((state) => ({ showCanvasGrid: !state.showCanvasGrid })),
   searchEngine: 'google',
@@ -197,12 +246,24 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       // Only track physical movement in the undo stack
       const isPositionChange = changes.some(c => c.type === 'position' && !c.dragging);
       const newUndoStack = isPositionChange ? [...state.undoStack, state.nodes].slice(-50) : state.undoStack;
+      const newNodes = applyNodeChanges(changes, state.nodes);
       const newState = {
-        nodes: applyNodeChanges(changes, state.nodes),
+        nodes: newNodes,
         undoStack: newUndoStack,
         redoStack: isPositionChange ? [] : state.redoStack
       };
       persistState({ ...state, ...newState })
+
+      changes.forEach(change => {
+        if (change.type === 'position' && !change.dragging) {
+          const oldNode = state.nodes.find(n => n.id === change.id);
+          const newNode = newNodes.find(n => n.id === change.id);
+          if (oldNode && newNode) {
+            queueEvent(change.id, 'widget_moved', oldNode, newNode);
+          }
+        }
+      });
+
       return newState;
     });
   },
@@ -250,6 +311,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       const newNodes = [...state.nodes, newNode]
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
+      queueEvent(id, 'widget_created', null, newNode);
       persistState({ ...state, ...newState })
       return newState
     })
@@ -307,6 +369,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       const newNodes = [...state.nodes, newNode]
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
+      queueEvent(id, 'widget_created', null, newNode);
       persistState({ ...state, ...newState })
       return newState
     })
@@ -364,8 +427,10 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
 
   updateWidgetData: (id, dataUpdates) => {
     set((state) => {
+      let oldNodeData: AppNode | undefined;
       const newNodes = state.nodes.map((node) => {
         if (node.id === id) {
+          oldNodeData = node;
           // It's crucial to create a new object here for React Flow to register the update
           return {
             ...node,
@@ -384,6 +449,10 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
           newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       }
 
+      if (oldNodeData) {
+        queueEvent(id, 'widget_updated', oldNodeData, newNodes.find((n) => n.id === id));
+      }
+
       const newState = { nodes: newNodes, undoStack: newUndoStack }
       persistState({ ...state, ...newState })
       return newState
@@ -392,11 +461,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
 
   removeWidget: (id) => {
     set((state) => {
+      const nodeToRemove = state.nodes.find(n => n.id === id);
       const newNodes = state.nodes.filter(n => n.id !== id)
       // also remove any edges connected to this widget if we add them later
       const newEdges = state.edges.filter(e => e.source !== id && e.target !== id)
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       
+      if (nodeToRemove) {
+        queueEvent(id, 'widget_deleted', nodeToRemove, null);
+      }
+
       const newState = { nodes: newNodes, edges: newEdges, undoStack: newUndoStack, redoStack: [] }
       persistState({ ...state, ...newState })
       return newState
@@ -424,6 +498,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       const newNodes = [...state.nodes, newNode]
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
+      queueEvent(newNode.id, 'widget_created', null, newNode);
       persistState({ ...state, ...newState })
       return newState
     })

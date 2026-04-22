@@ -11,6 +11,11 @@ function App() {
   const [showNewProfileModal, setShowNewProfileModal] = useState(false)
 
   useEffect(() => {
+    // Sync Flusher Interval
+    const flusher = setInterval(() => {
+      useCanvasStore.getState().flushSyncQueue();
+    }, 1500);
+
     loadInitialState()
 
     const handleProfileModalOpen = () => setShowNewProfileModal(true)
@@ -96,6 +101,7 @@ function App() {
           window.electron.ipcRenderer.removeListener?.('redo-action', handleIpcRedo)
           window.electron.ipcRenderer.removeListener?.('cut-action', handleIpcCut)
       }
+      clearInterval(flusher);
     }
   }, [])
 
