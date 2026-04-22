@@ -40,16 +40,6 @@ export type BrowserAppNode = Node<BrowserWidgetData, 'browser_widget'>;
 export type TextAppNode = Node<TextNodeData, 'text_node'>;
 export type AppNode = BrowserAppNode | TextAppNode;
 
-export interface TimelineEvent {
-  id: string;
-  workspace_id: string;
-  parent_event_id: string | null;
-  event_type: string;
-  payload: any;
-  full_snapshot?: any;
-  created_at: string;
-}
-
 export interface WorkspaceProfile {
   id: string
   name: string
@@ -113,11 +103,6 @@ export interface CanvasStore {
   activeNodeIds: string[]
   calculateCulling: () => void
 
-  // Sync Engine State
-  pendingSyncQueue: TimelineEvent[]
-  activeTimelineEventId: string | null
-  flushSyncQueue: () => void
-
   lastViewport: { x: number; y: number; zoom: number }
   setLastViewport: (viewport: { x: number; y: number; zoom: number }) => void
   loadInitialState: () => Promise<void>
@@ -127,51 +112,8 @@ export interface CanvasStore {
 let saveTimeout: any
 
 export const useCanvasStore = create<CanvasStore>((set, get) => {
-  const queueEvent = (eventType: string, payload: any, fullSnapshot?: any) => {
-    const { currentProfileId, activeTimelineEventId, pendingSyncQueue } = get();
-    
-    const newEventId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-    const event: TimelineEvent = {
-        id: newEventId,
-        workspace_id: currentProfileId,
-        parent_event_id: activeTimelineEventId,
-        event_type: eventType,
-        payload,
-        full_snapshot: fullSnapshot,
-        created_at: new Date().toISOString()
-    };
-    
-    set({
-        activeTimelineEventId: newEventId,
-        pendingSyncQueue: [...pendingSyncQueue, event]
-    });
-  };
 
   return {
-  pendingSyncQueue: [],
-  activeTimelineEventId: null,
-
-  flushSyncQueue: async () => {
-    const queue = get().pendingSyncQueue;
-    if (queue.length === 0) return;
-
-    // Clear queue locally
-    set({ pendingSyncQueue: [] });
-
-    try {
-      // TODO: Use actual Supabase instance when table exists
-      // await supabase.from('timeline_events').insert(queue);
-      console.log('Flushing to Supabase:', queue);
-      
-      // using the mocked supabase library for now, this would just be the table name
-      // await supabase.schema('spatial_os').from('spatial_timeline').insert(queue)
-    } catch (e) {
-      console.error('Failed to flush sync queue', e);
-      // Push back to queue if failed (simple retry logic)
-      set((state) => ({ pendingSyncQueue: [...queue, ...state.pendingSyncQueue] }));
-    }
-  },
-
   showCanvasGrid: true,
   toggleCanvasGrid: () => set((state) => ({ showCanvasGrid: !state.showCanvasGrid })),
   searchEngine: 'google',
@@ -308,7 +250,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       const newNodes = [...state.nodes, newNode]
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
-      queueEvent('NODE_SPAWN', { nodeClass: 'browser_widget', node: newNode });
       persistState({ ...state, ...newState })
       return newState
     })
@@ -366,7 +307,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       const newNodes = [...state.nodes, newNode]
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
-      queueEvent('NODE_SPAWN', { nodeClass: 'text_node', node: newNode });
       persistState({ ...state, ...newState })
       return newState
     })
@@ -444,8 +384,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
           newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       }
 
-      queueEvent('NODE_UPDATE', { id, dataUpdates });
-
       const newState = { nodes: newNodes, undoStack: newUndoStack }
       persistState({ ...state, ...newState })
       return newState
@@ -459,8 +397,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       const newEdges = state.edges.filter(e => e.source !== id && e.target !== id)
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       
-      queueEvent('NODE_DELETE', { id });
-
       const newState = { nodes: newNodes, edges: newEdges, undoStack: newUndoStack, redoStack: [] }
       persistState({ ...state, ...newState })
       return newState

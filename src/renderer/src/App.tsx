@@ -8,15 +8,9 @@ function App() {
   const { setOmnibarOpen, setSpacebarHeld, loadInitialState, addWidget, updateWidget } = useCanvasStore()
   const isTopTabBarVisible = useCanvasStore((state: any) => state.isTopTabBarVisible)
   const setTopTabBarVisible = useCanvasStore((state: any) => state.setTopTabBarVisible)
-  const { flushSyncQueue } = useCanvasStore()
   const [showNewProfileModal, setShowNewProfileModal] = useState(false)
 
   useEffect(() => {
-    // Sync Flusher Interval
-    const flusher = setInterval(() => {
-      flushSyncQueue();
-    }, 1500);
-
     loadInitialState()
 
     const handleProfileModalOpen = () => setShowNewProfileModal(true)
@@ -102,7 +96,6 @@ function App() {
           window.electron.ipcRenderer.removeListener?.('redo-action', handleIpcRedo)
           window.electron.ipcRenderer.removeListener?.('cut-action', handleIpcCut)
       }
-      clearInterval(flusher);
     }
   }, [])
 
