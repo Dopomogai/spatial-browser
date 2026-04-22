@@ -86,6 +86,7 @@ export interface CanvasStore {
   updateWidgetData: (id: string, dataUpdates: Partial<BrowserWidgetData & TextNodeData>) => void
   toggleFullscreen: (id: string) => void
   removeWidget: (id: string) => void
+  duplicateNode: (id: string) => void
   
   undo: () => void
   redo: () => void
@@ -387,6 +388,32 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       
       const newState = { nodes: newNodes, edges: newEdges, undoStack: newUndoStack, redoStack: [] }
+      persistState({ ...state, ...newState })
+      return newState
+    })
+  },
+
+  duplicateNode: (id) => {
+    set((state) => {
+      const targetNode = state.nodes.find(n => n.id === id)
+      if (!targetNode) return state;
+
+      const newNode = {
+        ...targetNode,
+        id: `${targetNode.type}_${Date.now()}`,
+        position: {
+          x: targetNode.position.x + 50,
+          y: targetNode.position.y + 50
+        },
+        data: {
+          ...targetNode.data,
+          interactionState: 'active'
+        }
+      } as AppNode;
+
+      const newNodes = [...state.nodes, newNode]
+      const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
+      const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
       persistState({ ...state, ...newState })
       return newState
     })
