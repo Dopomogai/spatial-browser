@@ -432,6 +432,8 @@ async function syncToSupabase(state: CanvasStore) {
             width: w.data.w,
             height: w.data.h,
             interaction_state: w.data.interactionState,
+            tab_history: w.data.tabHistory,
+            current_history_index: w.data.currentHistoryIndex,
             updated_at: new Date().toISOString(),
             last_active_at: new Date(w.data.lastActive as number).toISOString()
         }))
@@ -456,6 +458,7 @@ async function syncToSupabase(state: CanvasStore) {
                      spatial_workspace_id: state.currentProfileId,
                      widget_id: w.id,
                      action_type: 'widget_moved_out_of_bounds',
+                     agent_id: null, // Tracked from cursor proxy if agent acts
                      new_state: { x: w.position.x, y: w.position.y, url: w.data.url },
                      timestamp: new Date().toISOString()
                  });
