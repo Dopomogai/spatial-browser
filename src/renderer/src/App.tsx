@@ -111,7 +111,10 @@ function App() {
 
       {/* New Profile Modal */}
       {showNewProfileModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
               <div className="bg-surface_container_highest border border-white/10 rounded-xl shadow-2xl p-6 max-w-sm w-full animate-in fade-in zoom-in duration-200">
                   <h3 className="text-lg font-semibold text-white mb-2">Save New Profile</h3>
                   <p className="text-sm text-on_surface_variant mb-4">Name your current spatial workspace tab layout.</p>

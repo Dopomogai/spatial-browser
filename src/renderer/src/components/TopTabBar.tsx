@@ -20,7 +20,8 @@ export const TopTabBar: React.FC = () => {
     if (!isTopTabBarVisible) return null;
 
     return (
-        <div className="absolute top-4 right-4 h-12 bg-surface/70 backdrop-blur-md rounded-full border border-outline_variant/20 flex items-center px-4 z-50 shadow-md">
+        <div className="absolute top-4 right-4 h-12 bg-surface/70 backdrop-blur-md rounded-full border border-outline_variant/20 flex items-center px-4 z-50 shadow-md no-drag-region"
+            onPointerDown={(e) => { e.stopPropagation(); }}>
             
             <div className="flex items-center gap-2 h-6">
                 <button
