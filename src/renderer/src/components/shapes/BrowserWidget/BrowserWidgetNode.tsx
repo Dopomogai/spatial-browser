@@ -292,7 +292,7 @@ const isValidDataUrl = (str: string | undefined): boolean => {
               const newNode = {
                   id,
                   type: 'browser_widget', 
-                position: { x: (positionX || 0) + 20, y: (positionY || 0) + 20 },
+                  position: { x: (positionX || 0) + 50, y: (positionY || 0) + 50 },
                   data: {
                     ...widget,
                     id: undefined, // ensure duplicate does not carry same ID in local block logic
@@ -333,6 +333,14 @@ const isValidDataUrl = (str: string | undefined): boolean => {
                       </div>
                  </div>
              </div>
+        ) : useCanvasStore.getState().isAppMaximized && widget.w >= window.innerWidth * 0.9 ? (
+             <React.Fragment>
+                {/* When completely maximized, portal the webview directly to the document body to escape the ReactFlow matrix scale. */}
+                {/* Fallback to show inside node so it isn't rendered empty. */}
+                <div className="w-full h-full bg-black flex items-center justify-center text-white/50 text-sm">
+                    Content is maximized...
+                </div>
+             </React.Fragment>
         ) : (
             <webview
               ref={webviewRef}
@@ -343,6 +351,17 @@ const isValidDataUrl = (str: string | undefined): boolean => {
             />
         )}
       </div>
+
+      {useCanvasStore.getState().isAppMaximized && widget.w >= window.innerWidth * 0.9 && (
+         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
+             <webview
+                src={widget.url}
+                className="w-full h-full border-none"
+                partition="persist:main"
+                preload={`file://${(window as any).api?.getPreloadPath?.() || '../preload/index.js'}`}
+             />
+         </div>
+      )}
 
       {widget.interactionState === 'sleeping' && (
         // UI matches exactly, but we removed the manual TLDraw pointer-events math

@@ -4,12 +4,28 @@ import { Settings, History, Search, Plus, Undo, Redo } from 'lucide-react'
 
 export const TopTabBar: React.FC = () => {
     // Only subscribe to the specific parts of the store we need
-    const isTopTabBarVisible = useCanvasStore(state => state.isTopTabBarVisible)
+    const isMinimalHeader = useCanvasStore(state => state.isMinimalHeader)
+    const toggleHeaderMode = useCanvasStore(state => state.toggleHeaderMode)
     const undo = useCanvasStore(state => state.undo)
     const redo = useCanvasStore(state => state.redo)
     const undoStack = useCanvasStore(state => state.undoStack)
     const redoStack = useCanvasStore(state => state.redoStack)
     const [updater, setUpdater] = useState(0)
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+                if (e.shiftKey) {
+                    redo();
+                } else {
+                    undo();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [undo, redo]);
 
     // Force re-render when store updates specifically for top bar 
     useEffect(() => {
@@ -17,13 +33,11 @@ export const TopTabBar: React.FC = () => {
         return unsubscribe
     }, [])
 
-    if (!isTopTabBarVisible) return null;
-
     return (
-        <div className="absolute top-4 right-4 h-12 bg-surface/70 backdrop-blur-md rounded-full border border-outline_variant/20 flex items-center px-4 z-50 shadow-md no-drag-region"
+        <div className={`absolute top-4 right-4 bg-surface/70 backdrop-blur-md rounded-full border border-outline_variant/20 flex items-center px-4 z-50 shadow-md no-drag-region transition-all overflow-hidden ${isMinimalHeader ? 'w-12 h-12 justify-center px-0' : 'h-12 w-auto'}`}
             onPointerDown={(e) => { e.stopPropagation(); }}>
             
-            <div className="flex items-center gap-2 h-6">
+            <div className={`flex items-center gap-2 h-6 ${isMinimalHeader ? 'hidden' : 'opacity-100'}`}>
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('spawn-tab-center'))}
                   className="text-on_surface_variant hover:text-white transition-colors p-2 rounded-full hover:bg-surface_container_highest"
@@ -32,6 +46,25 @@ export const TopTabBar: React.FC = () => {
                     <Plus size={18} />
                 </button>
                 
+                <div className="w-[1px] h-4 bg-outline_variant/30 mx-1"></div>
+
+                <button
+                    onClick={() => undo()}
+                    disabled={undoStack.length === 0}
+                    className={`text-on_surface_variant transition-colors p-2 rounded-full ${undoStack.length === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:text-white hover:bg-surface_container_highest'}`}
+                    title="Undo (Cmd+Z)"
+                >
+                    <Undo size={18} />
+                </button>
+                <button
+                    onClick={() => redo()}
+                    disabled={redoStack.length === 0}
+                    className={`text-on_surface_variant transition-colors p-2 rounded-full ${redoStack.length === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:text-white hover:bg-surface_container_highest'}`}
+                    title="Redo (Cmd+Shift+Z)"
+                >
+                    <Redo size={18} />
+                </button>
+
                 <div className="w-[1px] h-4 bg-outline_variant/30 mx-1"></div>
 
                 <button
@@ -46,9 +79,6 @@ export const TopTabBar: React.FC = () => {
                   onClick={() => {
                       const rect = document.querySelector('.react-flow__pane')?.getBoundingClientRect();
                       if (rect) {
-                          // Quick hack: Use the canvas store addTextNode logic with standard middle-screen coordinates
-                          // React Flow screenToFlowPosition isn't directly available here, but the canvas has logic to jump to nodes anyway.
-                          // A better way is dispatching an event that SpatialCanvas catches to use screenToFlowPosition.
                           window.dispatchEvent(new CustomEvent('spawn-text-node-center'));
                       }
                   }}
@@ -79,8 +109,20 @@ export const TopTabBar: React.FC = () => {
                 >
                     <Settings size={18} />
                 </button>
+
+                <div className="w-[1px] h-4 bg-outline_variant/30 mx-1"></div>
             </div>
 
+            <button
+                onClick={toggleHeaderMode}
+                className="text-on_surface_variant hover:text-white transition-colors p-2 rounded-full hover:bg-surface_container_highest"
+                title={isMinimalHeader ? "Expand Top Bar" : "Minimize Top Bar"}
+            >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    className={`transform transition-transform ${isMinimalHeader ? 'rotate-180' : ''}`}>
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
         </div>
     )
 }

@@ -14,13 +14,15 @@ const Section = ({ title, icon: Icon, active, onClick }: any) => (
   </button>
 )
 
-export const SettingsWidgetComponent: React.FC<{ shape: any }> = ({ shape }) => {
+export const SettingsWidgetComponent: React.FC<{ shape?: any; id?: string }> = ({ shape, id }) => {
+    // V2 architecture typically passes properties via `id` in React Flow's node system 
+    const widgetId = id || shape?.id || 'system-widget-settings'
   const [activeTab, setActiveTab] = useState('general')
   const { theme, setTheme, defaultTabWidth, defaultTabHeight, setDefaultTabSize } = useCanvasStore()
 
   return (
     <div
-      id={shape.id}
+      id={widgetId}
       className="w-full h-full rounded-[16px] overflow-hidden flex pointer-events-auto"
       style={{
         backgroundColor: 'rgba(42, 42, 44, 0.7)', // surface-container-high

@@ -3,6 +3,7 @@ import { ReactFlow, Background, MiniMap, Controls, useReactFlow, ReactFlowProvid
 import type { NodeTypes } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { BrowserWidgetNode } from '../shapes/BrowserWidget/BrowserWidgetNode'
+import { SettingsWidgetComponent } from '../shapes/SettingsWidget/SettingsWidgetComponent'
 import { TextNodeComponent } from '../shapes/TextNode/TextNodeComponent'
 import { useCanvasStore } from '../../store/useCanvasStore'
 import type { AppNode } from '../../store/useCanvasStore'
@@ -13,8 +14,9 @@ import { Omnibar } from '../ui/Omnibar'
 const nodeTypes: NodeTypes = {
   browser_widget: BrowserWidgetNode,
   text_node: TextNodeComponent,
-//  canvases_widget: CanvasesWidgetNode,
+  settingsWidget: SettingsWidgetComponent,
 //  settings_widget: SettingsWidgetNode,
+//  canvases_widget: CanvasesWidgetNode,
 }
 
 const CanvasContent = () => {
@@ -179,7 +181,6 @@ const CanvasContent = () => {
     }
         
     const handleSpawnSettings = () => {
-        const id = `settings_widget_${Date.now()}`
         const viewport = getViewport()
         const scale = viewport.zoom
         const windowWidth = window.innerWidth
@@ -187,32 +188,10 @@ const CanvasContent = () => {
         const centerXV = windowWidth / 2
         const centerYV = windowHeight / 2
         
-        const visibleX = (centerXV - viewport.x) / scale - 250 // offset for widget half width (500/2)
-        const visibleY = (centerYV - viewport.y) / scale - 200 // offset for widget half height (400/2)
+        const visibleX = (centerXV - viewport.x) / scale - 200 // offset for widget half width (400/2)
+        const visibleY = (centerYV - viewport.y) / scale - 250 // offset for widget half height (500/2)
         
-        const newNode: AppNode = {
-            id,
-            type: 'browser_widget', // Built via browser node routing to settings page for now
-            position: { x: visibleX, y: visibleY },
-            data: {
-              url: 'about:blank#settings', // Distinguishes it inside the Node
-              title: 'Settings',
-              faviconUrl: '',
-              screenshotBase64: null,
-              w: 500,
-              h: 400,
-              interactionState: 'active',
-              lastActive: Date.now(),
-              tabHistory: ['about:blank#settings'],
-              currentHistoryIndex: 0
-            }
-        }
-        
-        useCanvasStore.setState((state) => ({
-            nodes: [...state.nodes, newNode],
-            undoStack: [...state.undoStack, state.nodes].slice(-50),
-            redoStack: []
-        }))
+        useCanvasStore.getState().addSettingsWidget(visibleX, visibleY)
     }
 
     window.addEventListener('spawn-tab-center', handleSpawnCenter)
@@ -276,10 +255,15 @@ const CanvasContent = () => {
       return () => clearInterval(interval)
   }, [nodes, getViewport, updateWidgetData])
 
-  // Track and save viewport changes
+  // Track and save viewport changes with debounce
   const { setLastViewport } = useCanvasStore()
+  const [moveTimeout, setMoveTimeout] = useState<any>(null)
   const onMoveEnd = (_event: any, viewport: { x: number; y: number; zoom: number }) => {
-    setLastViewport(viewport)
+    if (moveTimeout) clearTimeout(moveTimeout)
+    const timeout = setTimeout(() => {
+      setLastViewport(viewport)
+    }, 500)
+    setMoveTimeout(timeout)
   }
 
   return (

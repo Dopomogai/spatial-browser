@@ -74,12 +74,12 @@ export interface CanvasStore {
  defaultTabHeight: number
  setDefaultTabSize: (width: number, height: number) => void
 
-  // Application Actions
-  isTopTabBarVisible: boolean
-  setTopTabBarVisible: (visible: boolean) => void
+  isMinimalHeader: boolean
+  toggleHeaderMode: () => void
   
-  addWidget: (url: string, x: number, y: number) => void
-  addTextNode: (x: number, y: number) => void
+  addWidget: (url?: string, x?: number, y?: number) => void
+  addSettingsWidget: (x: number, y: number) => void
+  addTextNode: (x?: number, y?: number) => void
   updateWidgetData: (id: string, dataUpdates: Partial<BrowserWidgetData & TextNodeData>) => void
   toggleFullscreen: (id: string) => void
   removeWidget: (id: string) => void
@@ -101,6 +101,8 @@ export interface CanvasStore {
 let saveTimeout: any
 
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
+  isMinimalHeader: false,
+  toggleHeaderMode: () => set((state) => ({ isMinimalHeader: !state.isMinimalHeader })),
   isAppMaximized: false,
   setIsAppMaximized: (maximized) => set({ isAppMaximized: maximized }),
   nodes: [],
@@ -108,7 +110,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   currentProfileId: 'default',
   profiles: [{ id: 'default', name: 'Default Profile', nodes: [], edges: [] }],
   isOmnibarOpen: false,
-  isTopTabBarVisible: true,
   omnibarPosition: null, // this holds physical canvas coordinates, NOT visual css integers!
  isSpacebarHeld: false,
   theme: 'dark',
@@ -119,7 +120,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   lastViewport: { x: 0, y: 0, zoom: 1 },
 
   setTheme: (theme) => set({ theme }),
-  setTopTabBarVisible: (visible) => set({ isTopTabBarVisible: visible }),
 
   undoStack: [],
   redoStack: [],
@@ -172,15 +172,19 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     persistState(get())
   },
 
- addWidget: (url, x, y) => {
+ addWidget: (url = 'https://google.com', x?: number, y?: number) => {
    const id = `browser_widget_${Date.now()}`
    
-   const { defaultTabWidth, defaultTabHeight } = get()
+   const { defaultTabWidth, defaultTabHeight, lastViewport } = get()
+   
+   // Calculate center of viewport if coordinates are not provided
+   const spawnX = x !== undefined ? x : (-lastViewport.x + window.innerWidth / 2) / lastViewport.zoom - (defaultTabWidth / 2);
+   const spawnY = y !== undefined ? y : (-lastViewport.y + window.innerHeight / 2) / lastViewport.zoom - (defaultTabHeight / 2);
 
    const newNode: AppNode = {
      id,
       type: 'browser_widget', // Matches nodeTypes in ReactFlow instance
-      position: { x, y }, // React flow handles position natively
+      position: { x: spawnX, y: spawnY }, // React flow handles position natively
       data: {
         url,
         title: 'New Tab',
@@ -204,13 +208,46 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     })
   },
 
-  addTextNode: (x, y) => {
+  addSettingsWidget: (x, y) => {
+    const id = 'system-widget-settings'
+    
+    set((state) => {
+      const existingSettingsNode = state.nodes.find(n => n.id === id)
+      if (existingSettingsNode) {
+        // Bring to front or just focus logic if needed
+        return state
+      }
+
+      const newNode = {
+        id,
+        type: 'settingsWidget',
+        position: { x, y },
+        data: {
+          w: 400,
+          h: 500,
+          interactionState: 'active'
+        }
+      } as any // We override AppNode type strictly for the settings node which is allowed loosely in layout
+
+      const newNodes = [...state.nodes, newNode]
+      const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
+      const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
+      persistState({ ...state, ...newState })
+      return newState
+    })
+  },
+
+  addTextNode: (x?: number, y?: number) => {
     const id = `text_node_${Date.now()}`
     
+    const { lastViewport } = get()
+    const spawnX = x !== undefined ? x : (-lastViewport.x + window.innerWidth / 2) / lastViewport.zoom - (300 / 2);
+    const spawnY = y !== undefined ? y : (-lastViewport.y + window.innerHeight / 2) / lastViewport.zoom - (150 / 2);
+
     const newNode: AppNode = {
       id,
       type: 'text_node',
-      position: { x, y },
+      position: { x: spawnX, y: spawnY },
       data: {
         text: '',
         w: 300,
