@@ -289,12 +289,14 @@ const CanvasContent = () => {
         maxZoom={2}
         proOptions={{ hideAttribution: true }} // Let's keep Dopomogai clean
       >
-        <Background 
-          color="rgba(255,255,255,0.03)" 
-          size={1} 
-          gap={40} 
-          className="bg-[#131315]"
-        />
+        {useCanvasStore((state) => state.showCanvasGrid) && (
+          <Background 
+            color="rgba(255,255,255,0.03)" 
+            size={1} 
+            gap={40} 
+            className="bg-[#131315]"
+          />
+        )}
         
         {/* We use ReactFlow's natively styled components, customized heavily to match LiquidGlass Dopomogai style */}
         {useCanvasStore((state) => state.isTopTabBarVisible) && !isAppMaximized && (

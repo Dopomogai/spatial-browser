@@ -18,7 +18,7 @@ export const SettingsWidgetComponent: React.FC<{ shape?: any; id?: string }> = (
     // V2 architecture typically passes properties via `id` in React Flow's node system 
     const widgetId = id || shape?.id || 'system-widget-settings'
   const [activeTab, setActiveTab] = useState('general')
-  const { theme, setTheme, defaultTabWidth, defaultTabHeight, setDefaultTabSize } = useCanvasStore()
+  const { theme, setTheme, defaultTabWidth, defaultTabHeight, setDefaultTabSize, showCanvasGrid, toggleCanvasGrid, searchEngine, setSearchEngine, isMinimalHeader, toggleHeaderMode } = useCanvasStore()
 
   return (
     <div
@@ -59,8 +59,13 @@ export const SettingsWidgetComponent: React.FC<{ shape?: any; id?: string }> = (
                   <div className="text-white text-sm font-medium">Show Tab List</div>
                   <div className="text-on_surface_variant text-[11px]">Display active native OS tabs grouped at the top.</div>
                 </div>
-                <div className="w-10 h-5 bg-primary rounded-full relative cursor-pointer shadow-[0_0_10px_rgba(170,199,255,0.3)]">
-                  <div className="absolute right-1 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+                <div 
+                  className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${!isMinimalHeader ? 'bg-primary shadow-[0_0_10px_rgba(170,199,255,0.3)]' : 'bg-surface_container_highest'}`}
+                  onClick={toggleHeaderMode}
+                >
+                  <div 
+                    className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${!isMinimalHeader ? 'right-1 bg-white' : 'left-1 bg-on_surface_variant'}`}
+                  ></div>
                 </div>
               </div>
 
@@ -69,8 +74,13 @@ export const SettingsWidgetComponent: React.FC<{ shape?: any; id?: string }> = (
                   <div className="text-white text-sm font-medium">Canvas Grid</div>
                   <div className="text-on_surface_variant text-[11px]">Show dot-grid background on the canvas naturally.</div>
                 </div>
-                <div className="w-10 h-5 bg-primary rounded-full relative cursor-pointer shadow-[0_0_10px_rgba(170,199,255,0.3)]">
-                  <div className="absolute right-1 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+                <div 
+                  className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${showCanvasGrid ? 'bg-primary shadow-[0_0_10px_rgba(170,199,255,0.3)]' : 'bg-surface_container_highest'}`}
+                  onClick={toggleCanvasGrid}
+                >
+                  <div 
+                    className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${showCanvasGrid ? 'right-1 bg-white' : 'left-1 bg-on_surface_variant'}`}
+                  ></div>
                 </div>
               </div>
 
@@ -91,10 +101,14 @@ export const SettingsWidgetComponent: React.FC<{ shape?: any; id?: string }> = (
 
               <div className="space-y-2 mt-4">
                 <div className="text-white text-sm font-medium">Default Search Engine</div>
-                <select className="w-full bg-surface_container_lowest border border-white/10 rounded-lg p-2 text-white text-sm outline-none cursor-pointer">
-                  <option>Google</option>
-                  <option>DuckDuckGo</option>
-                  <option>Perplexity</option>
+                <select 
+                  className="w-full bg-surface_container_lowest border border-white/10 rounded-lg p-2 text-white text-sm outline-none cursor-pointer"
+                  value={searchEngine}
+                  onChange={(e) => setSearchEngine(e.target.value as 'google' | 'duckduckgo' | 'perplexity')}
+                >
+                  <option value="google">Google</option>
+                  <option value="duckduckgo">DuckDuckGo</option>
+                  <option value="perplexity">Perplexity</option>
                 </select>
               </div>
 

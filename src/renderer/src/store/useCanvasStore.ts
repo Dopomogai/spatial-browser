@@ -79,6 +79,10 @@ export interface CanvasStore {
 
   isMinimalHeader: boolean
   toggleHeaderMode: () => void
+  showCanvasGrid: boolean
+  toggleCanvasGrid: () => void
+  searchEngine: 'google' | 'duckduckgo' | 'perplexity'
+  setSearchEngine: (engine: 'google' | 'duckduckgo' | 'perplexity') => void
   
   addWidget: (url?: string, x?: number, y?: number) => void
   addSettingsWidget: (x: number, y: number) => void
@@ -108,6 +112,10 @@ export interface CanvasStore {
 let saveTimeout: any
 
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
+  showCanvasGrid: true,
+  toggleCanvasGrid: () => set((state) => ({ showCanvasGrid: !state.showCanvasGrid })),
+  searchEngine: 'google',
+  setSearchEngine: (engine) => set({ searchEngine: engine }),
   isMinimalHeader: false,
   toggleHeaderMode: () => set((state) => ({ isMinimalHeader: !state.isMinimalHeader })),
   isAppMaximized: false,
@@ -489,7 +497,10 @@ function persistState(state: CanvasStore) {
        theme: state.theme,
        lastViewport: state.lastViewport,
        defaultTabWidth: state.defaultTabWidth,
-       defaultTabHeight: state.defaultTabHeight
+       defaultTabHeight: state.defaultTabHeight,
+       isMinimalHeader: state.isMinimalHeader,
+       showCanvasGrid: state.showCanvasGrid,
+       searchEngine: state.searchEngine
    }
 
     // Local persistence (V2 uses new key to avoid clashing with V1 TLDraw store)
