@@ -115,8 +115,11 @@ export interface CanvasStore {
   calculateCulling: () => void
 
   // Sync Engine State
-  pendingSpatialEvents: SpatialTimelineEvent[]
-  flushSyncQueue: () => void
+  currentCanvasId: string
+  currentSequence: number
+  pendingSpatialEvents: any[]
+  queueSpatialEvent: (action_type: string, payload: any) => void
+  flushSpatialEvents: () => void
 
   lastViewport: { x: number; y: number; zoom: number }
   setLastViewport: (viewport: { x: number; y: number; zoom: number }) => void
@@ -145,8 +148,28 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
   };
 
   return {
+  currentCanvasId: 'default-canvas-uuid',
+  currentSequence: 0,
   pendingSpatialEvents: [],
-  flushSyncQueue: async () => {
+  queueSpatialEvent: (action_type: string, delta_payload: any) => {
+    const { currentCanvasId, currentSequence, pendingSpatialEvents } = get();
+    const newSequence = currentSequence + 1;
+    
+    const event = {
+      canvas_id: currentCanvasId,
+      sequence: newSequence,
+      action_type,
+      delta_payload,
+      is_agent: false
+    };
+    
+    set({
+      currentSequence: newSequence,
+      pendingSpatialEvents: [...pendingSpatialEvents, event]
+    });
+  },
+
+  flushSpatialEvents: async () => {
     const queue = get().pendingSpatialEvents;
     if (queue.length === 0) return;
 
@@ -154,8 +177,53 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
     set({ pendingSpatialEvents: [] });
 
     try {
-      // TODO: supabase.from('spatial_timeline').insert(queue)
-      console.log('Flushing spatial timeline events:', queue);
+      if (typeof supabase !== 'undefined' && supabase) {
+         // Log timeline events
+         const { error } = await supabase.schema('spatial_os').from('spatial_timeline').insert(queue);
+         if (error) throw error;
+         
+         // Upsert current widget state
+         // Get the current nodes and filter only those that were touched in this batch
+         const { nodes, currentCanvasId } = get();
+         
+         // Collect all unique widget IDs that were mutated in this batch
+         const modifiedWidgetIds = new Set<string>();
+         
+         for (const event of queue) {
+             const payload = event.delta_payload;
+             if (payload && payload.id) {
+                 modifiedWidgetIds.add(payload.id);
+             }
+         }
+         
+         if (modifiedWidgetIds.size > 0) {
+             const widgetsToUpsert = nodes
+               .filter(node => modifiedWidgetIds.has(node.id))
+               .map(w => ({
+                 id: w.id,
+                 spatial_workspace_id: currentCanvasId,
+                 widget_type: w.type,
+                 url: w.data?.url || '',
+                 title: w.data?.title || '',
+                 x: w.position.x,
+                 y: w.position.y,
+                 width: w.data?.w || w.data?.width || 0,
+                 height: w.data?.h || w.data?.height || 0,
+                 interaction_state: w.data?.interactionState || 'active',
+                 tab_history: w.data?.tabHistory || [],
+                 current_history_index: w.data?.currentHistoryIndex || 0,
+                 updated_at: new Date().toISOString()
+               }));
+             
+             if (widgetsToUpsert.length > 0) {
+                 const { error: widgetError } = await supabase.schema('spatial_os').from('spatial_widgets').upsert(widgetsToUpsert, { onConflict: 'id' });
+                 if (widgetError) console.error('Failed to upsert widgets:', widgetError);
+             }
+         }
+         
+      } else {
+         console.log('Mock flush spatial timeline events:', queue);
+      }
     } catch (e) {
       console.error('Failed to flush sync queue', e);
       // Push back to queue if failed (simple retry logic)
@@ -260,6 +328,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
           const newNode = newNodes.find(n => n.id === change.id);
           if (oldNode && newNode) {
             queueEvent(change.id, 'widget_moved', oldNode, newNode);
+            get().queueSpatialEvent('WIDGET_MOVE', { id: change.id, x: newNode.position.x, y: newNode.position.y });
           }
         }
       });
@@ -312,6 +381,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
       queueEvent(id, 'widget_created', null, newNode);
+      get().queueSpatialEvent('WIDGET_SPAWN', { id, ...newNode });
       persistState({ ...state, ...newState })
       return newState
     })
@@ -370,6 +440,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
       queueEvent(id, 'widget_created', null, newNode);
+      get().queueSpatialEvent('WIDGET_SPAWN', { id, ...newNode });
       persistState({ ...state, ...newState })
       return newState
     })
@@ -452,6 +523,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       if (oldNodeData) {
         queueEvent(id, 'widget_updated', oldNodeData, newNodes.find((n) => n.id === id));
       }
+      get().queueSpatialEvent('WIDGET_UPDATE', { id, ...dataUpdates });
 
       const newState = { nodes: newNodes, undoStack: newUndoStack }
       persistState({ ...state, ...newState })
@@ -470,6 +542,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       if (nodeToRemove) {
         queueEvent(id, 'widget_deleted', nodeToRemove, null);
       }
+      get().queueSpatialEvent('WIDGET_DELETE', { id });
 
       const newState = { nodes: newNodes, edges: newEdges, undoStack: newUndoStack, redoStack: [] }
       persistState({ ...state, ...newState })
@@ -499,6 +572,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
       queueEvent(newNode.id, 'widget_created', null, newNode);
+      get().queueSpatialEvent('WIDGET_DUPLICATE', { id: newNode.id, original_id: id, ...newNode });
       persistState({ ...state, ...newState })
       return newState
     })

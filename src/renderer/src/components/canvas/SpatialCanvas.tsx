@@ -67,6 +67,15 @@ const CanvasContent = () => {
     };
   }, []);
 
+  // Global Flusher for Spatialos Background Synchronization
+  useEffect(() => {
+    const flusherId = setInterval(() => {
+      const state = useCanvasStore.getState()
+      state.flushSpatialEvents()
+    }, 1500)
+    return () => clearInterval(flusherId)
+  }, [])
+
   // Handle global events dispatched from TopTabBar or elsewhere
   useEffect(() => {
     const handleSpawnCenter = () => {
