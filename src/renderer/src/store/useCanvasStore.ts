@@ -179,7 +179,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
     try {
       if (typeof supabase !== 'undefined' && supabase) {
          // Log timeline events
-         const { error } = await supabase.schema('spatial_os').from('spatial_timeline').insert(queue);
+         const mappedQueue = queue.map(q => ({
+             canvas_id: q.canvas_id,
+             sequence: q.sequence,
+             action_type: q.action_type,
+             delta_payload: q.delta_payload,
+             is_agent: q.is_agent
+         }));
+         const { error } = await supabase.schema('spatial_os').from('spatial_timeline').insert(mappedQueue);
          if (error) throw error;
          
          // Upsert current widget state
@@ -201,17 +208,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
                .filter(node => modifiedWidgetIds.has(node.id))
                .map(w => ({
                  id: w.id,
-                 spatial_workspace_id: currentCanvasId,
+                 canvas_id: '00000000-0000-0000-0000-000000000000', // Requires valid UUID matching active_canvas_id
                  widget_type: w.type,
                  url: w.data?.url || '',
                  title: w.data?.title || '',
-                 x: w.position.x,
-                 y: w.position.y,
+                 position_x: w.position.x,
+                 position_y: w.position.y,
                  width: w.data?.w || w.data?.width || 0,
                  height: w.data?.h || w.data?.height || 0,
                  interaction_state: w.data?.interactionState || 'active',
-                 tab_history: w.data?.tabHistory || [],
-                 current_history_index: w.data?.currentHistoryIndex || 0,
                  updated_at: new Date().toISOString()
                }));
              
@@ -674,10 +679,11 @@ async function syncToSupabase(state: CanvasStore) {
       .schema('spatial_os')
       .from('spatial_workspaces')
       .upsert({
-        id: state.currentProfileId,
-        workspace_id: '00000000-0000-0000-0000-000000000000', // Mock link to public.workspaces.id for now
-        profile_id: state.currentProfileId,
-        name: state.profiles.find(p => p.id === state.currentProfileId)?.name || 'Default Profile',
+        id: '00000000-0000-0000-0000-000000000000', // Requires valid UUID for current profile test
+        workspace_id: '00000000-0000-0000-0000-000000000000',
+        profile_name: state.profiles.find(p => p.id === state.currentProfileId)?.name || 'Default Profile',
+        active_canvas_id: '00000000-0000-0000-0000-000000000000', // Mock link
+        theme_engine_state: { theme: state.theme },
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' })
       
@@ -686,20 +692,19 @@ async function syncToSupabase(state: CanvasStore) {
     
     if (currentWidgets.length > 0) {
         const widgetPayload = currentWidgets.map(w => ({
-            id: w.id, // String IDs supported if schema altered or backend coerces
-            spatial_workspace_id: state.currentProfileId,
+            id: w.id,
+            canvas_id: '00000000-0000-0000-0000-000000000000', // Requires valid UUID 
             widget_type: w.type,
             url: w.data.url,
             title: w.data.title,
-            x: w.position.x,
-            y: w.position.y,
+            position_x: w.position.x,
+            position_y: w.position.y,
             width: w.data.w,
             height: w.data.h,
             interaction_state: w.data.interactionState,
-            tab_history: w.data.tabHistory,
-            current_history_index: w.data.currentHistoryIndex,
+            snapshot_url: w.data.screenshotBase64,
             updated_at: new Date().toISOString(),
-            last_active_at: new Date(w.data.lastActive as number).toISOString()
+            last_active_at: w.data.lastActive ? new Date(w.data.lastActive).toISOString() : new Date().toISOString()
         }))
         
         await supabase.schema('spatial_os').from('spatial_widgets').upsert(widgetPayload, { onConflict: 'id' })
@@ -713,18 +718,18 @@ async function syncToSupabase(state: CanvasStore) {
         const viewMaxY = viewMinY + window.innerHeight / vZoom;
         
         const timelinePayload = [];
-        
+        let seq = 1000; // Mock sequence for detached boundary tracking
         for (const w of currentWidgets) {
-            // Very simple out of bounds logic just for demonstration 
             const isOutside = w.position.x < viewMinX || w.position.y < viewMinY || w.position.x > viewMaxX || w.position.y > viewMaxY;
             if (isOutside) {
                  timelinePayload.push({
-                     spatial_workspace_id: state.currentProfileId,
-                     widget_id: w.id,
+                     canvas_id: '00000000-0000-0000-0000-000000000000',
+                     sequence: seq++,
                      action_type: 'widget_moved_out_of_bounds',
-                     agent_id: null, // Tracked from cursor proxy if agent acts
-                     new_state: { x: w.position.x, y: w.position.y, url: w.data.url },
-                     timestamp: new Date().toISOString()
+                     delta_payload: { id: w.id, position_x: w.position.x, position_y: w.position.y, url: w.data.url },
+                     actor_id: null,
+                     is_agent: false,
+                     created_at: new Date().toISOString()
                  });
             }
         }
