@@ -6,6 +6,7 @@ import type { Connection, Edge, Node, OnNodesChange, OnEdgesChange, OnConnect } 
 
 import { supabase } from '../lib/supabase'
 import { syncSpatialEvents } from '../api/api'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export type WidgetState = 'active' | 'sleeping' | 'minimized'
 
@@ -125,6 +126,9 @@ export interface CanvasStore {
   setLastViewport: (viewport: { x: number; y: number; zoom: number }) => void
   loadInitialState: () => Promise<void>
   loadProfile: (profileId: string) => void
+
+  realtimeSubscription: RealtimeChannel | null
+  initializeTimelineSubscription: () => void
 }
 
 let saveTimeout: any
@@ -628,6 +632,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
           currentSequence: Math.max(state.currentSequence, ...storedQueue.map((e: any) => e.sequence || 0))
         }));
       }
+
+      get().initializeTimelineSubscription()
     } catch (e) {
       console.error('Failed to load local DB', e)
     }
@@ -646,8 +652,63 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
           persistState({ ...state, ...newState })
           return newState
       })
-  }
+  },
 
+  realtimeSubscription: null,
+  initializeTimelineSubscription: () => {
+    const { visitorId, realtimeSubscription } = get();
+    
+    // Prevent infinite rebinding
+    if (realtimeSubscription) return;
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel('spatial_timeline_sync')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'spatial_os',
+          table: 'spatial_timeline'
+        },
+        (payload) => {
+          // Always fetch current states again to avoid stale closure issues
+          const currentVisitorId = get().visitorId;
+          const row = payload.new;
+          
+          // 4a: Don't echo out our own changes
+          if (row.actor_id === currentVisitorId && currentVisitorId !== null) {
+            return;
+          }
+          
+          // 4b: Handle remote events based on action_type
+          if (row.action_type === 'WIDGET_MOVE') {
+             const state = get();
+             const targetNodeId = row.widget_id || row.delta_payload?.id;
+             if (!targetNodeId) return;
+             
+             // Only update if the node exists and is tracking coordinates
+             set({
+                nodes: state.nodes.map(node => {
+                   if (node.id === targetNodeId) {
+                       return {
+                           ...node,
+                           position: {
+                               x: row.new_state?.x || row.delta_payload?.x || node.position.x,
+                               y: row.new_state?.y || row.delta_payload?.y || node.position.y
+                           }
+                       } as AppNode
+                   }
+                   return node;
+                })
+             });
+          }
+        }
+      )
+      .subscribe();
+      
+    set({ realtimeSubscription: channel });
+  }
 };
 })
 
