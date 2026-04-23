@@ -73,10 +73,9 @@ export interface CanvasStore {
   currentProfileId: string
   profiles: WorkspaceProfile[]
   
-  activeNodeIds: string[]
-  calculateCulling: () => void
+  visitorId: string | null
+  setVisitorId: (id: string) => void
   
-  // UI Interaction State
   isOmnibarOpen: boolean
   isSpacebarHeld: boolean
   omnibarPosition: { x: number; y: number } | null
@@ -143,8 +142,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
         timestamp: new Date().toISOString()
     };
     
+    const newQueue = [...pendingSpatialEvents, event];
     set({
-        pendingSpatialEvents: [...pendingSpatialEvents, event]
+        pendingSpatialEvents: newQueue
+    });
+    
+    // Asynchronously write to idb-keyval to persist across reloads
+    idbSet('pendingSpatialEvents', newQueue).catch(err => {
+      console.error('Failed to save spatial events to IndexedDB', err);
     });
   };
 
@@ -164,9 +169,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       is_agent: false
     };
     
+    const newQueue = [...pendingSpatialEvents, event];
     set({
       currentSequence: newSequence,
-      pendingSpatialEvents: [...pendingSpatialEvents, event]
+      pendingSpatialEvents: newQueue
+    });
+    
+    // Asynchronously write to idb-keyval to persist across reloads
+    idbSet('pendingSpatialEvents', newQueue).catch(err => {
+      console.error('Failed to save spatial events to IndexedDB', err);
     });
   },
 
@@ -174,12 +185,24 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
     const queue = get().pendingSpatialEvents;
     if (queue.length === 0) return;
 
-    // Clear queue locally
-    set({ pendingSpatialEvents: [] })
+    // Optional early check, avoid failing the console pointlessly if completely offline
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+       console.log('Currently offline, holding spatial events in IndexedDB buffer.');
+       return;
+    }
 
     try {
          const visitorId = get().visitorId;
          await syncSpatialEvents(queue, visitorId);
+         
+         // Only clear local queue and persistent store on success
+         const currentQueue = get().pendingSpatialEvents;
+         const remainingQueue = currentQueue.filter(
+           currentEvent => !queue.some(flushedEvent => flushedEvent.sequence === currentEvent.sequence)
+         );
+         
+         set({ pendingSpatialEvents: remainingQueue });
+         await idbSet('pendingSpatialEvents', remainingQueue);
          
          if (typeof supabase !== 'undefined' && supabase) {
              // Now also update the widgets if necessary to ensure spatial_widgets is in sync
@@ -222,9 +245,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
          console.log('Mock flush spatial timeline events:', queue);
       }
     } catch (e) {
-      console.error('Failed to flush sync queue', e);
-      // Push back to queue if failed (simple retry logic)
-      set((state) => ({ pendingSpatialEvents: [...queue, ...state.pendingSpatialEvents] }));
+      console.error('Failed to flush sync queue, retaining in IndexedDB', e);
+      // We don't need to do anything with the pendingSpatialEvents array here; we left it intact.
     }
   },
 
@@ -240,6 +262,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
   edges: [],
   currentProfileId: 'default',
   profiles: [{ id: 'default', name: 'Default Profile', nodes: [], edges: [] }],
+  visitorId: null,
+  setVisitorId: (id) => set({ visitorId: id }),
   activeNodeIds: [],
   isOmnibarOpen: false,
   omnibarPosition: null, // this holds physical canvas coordinates, NOT visual css integers!
@@ -378,7 +402,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
       queueEvent(id, 'widget_created', null, newNode);
-      get().queueSpatialEvent('WIDGET_SPAWN', { id, ...newNode });
+      get().queueSpatialEvent('WIDGET_SPAWN', { ...newNode });
       persistState({ ...state, ...newState })
       return newState
     })
@@ -437,7 +461,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
       queueEvent(id, 'widget_created', null, newNode);
-      get().queueSpatialEvent('WIDGET_SPAWN', { id, ...newNode });
+      get().queueSpatialEvent('WIDGET_SPAWN', { ...newNode });
       persistState({ ...state, ...newState })
       return newState
     })
@@ -569,7 +593,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
       const newUndoStack = [...state.undoStack, state.nodes].slice(-50)
       const newState = { nodes: newNodes, undoStack: newUndoStack, redoStack: [] }
       queueEvent(newNode.id, 'widget_created', null, newNode);
-      get().queueSpatialEvent('WIDGET_DUPLICATE', { id: newNode.id, original_id: id, ...newNode });
+      get().queueSpatialEvent('WIDGET_DUPLICATE', { original_id: id, ...newNode });
       persistState({ ...state, ...newState })
       return newState
     })
@@ -587,12 +611,22 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
 
   loadInitialState: async () => {
     try {
+      // First load regular UI state
       const stored = await idbGet<Partial<CanvasStore>>('spatial-canvas-v2-state')
       if (stored) {
         set({ ...stored, isOmnibarOpen: false, omnibarPosition: null } as any)
         if (stored.theme) {
           document.documentElement.setAttribute('data-theme', stored.theme);
         }
+      }
+      
+      // Then load offline buffer queue
+      const storedQueue = await idbGet<any[]>('pendingSpatialEvents');
+      if (storedQueue && Array.isArray(storedQueue) && storedQueue.length > 0) {
+        set((state) => ({ 
+          pendingSpatialEvents: [...storedQueue, ...state.pendingSpatialEvents],
+          currentSequence: Math.max(state.currentSequence, ...storedQueue.map((e: any) => e.sequence || 0))
+        }));
       }
     } catch (e) {
       console.error('Failed to load local DB', e)
@@ -727,7 +761,7 @@ async function syncToSupabase(state: CanvasStore) {
         }
         
         if (timelinePayload.length > 0) {
-            const visitorId = get().visitorId;
+            const visitorId = state.visitorId;
             await syncSpatialEvents(timelinePayload, visitorId);
         }
     }
