@@ -5,6 +5,7 @@ import { applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react'
 import type { Connection, Edge, Node, OnNodesChange, OnEdgesChange, OnConnect } from '@xyflow/react'
 
 import { supabase } from '../lib/supabase'
+import { syncSpatialEvents } from '../api/api'
 
 export type WidgetState = 'active' | 'sleeping' | 'minimized'
 
@@ -174,24 +175,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
     if (queue.length === 0) return;
 
     // Clear queue locally
-    set({ pendingSpatialEvents: [] });
+    set({ pendingSpatialEvents: [] })
 
     try {
-      if (typeof supabase !== 'undefined' && supabase) {
-         // Log timeline events
-         const mappedQueue = queue.map(q => ({
-             canvas_id: q.canvas_id,
-             sequence: q.sequence,
-             action_type: q.action_type,
-             delta_payload: q.delta_payload,
-             is_agent: q.is_agent
-         }));
-         const { error } = await supabase.schema('spatial_os').from('spatial_timeline').insert(mappedQueue);
-         if (error) throw error;
+         const visitorId = get().visitorId;
+         await syncSpatialEvents(queue, visitorId);
          
-         // Upsert current widget state
-         // Get the current nodes and filter only those that were touched in this batch
-         const { nodes, currentCanvasId } = get();
+         if (typeof supabase !== 'undefined' && supabase) {
+             // Now also update the widgets if necessary to ensure spatial_widgets is in sync
+             const { nodes } = get();
          
          // Collect all unique widget IDs that were mutated in this batch
          const modifiedWidgetIds = new Set<string>();
@@ -735,7 +727,8 @@ async function syncToSupabase(state: CanvasStore) {
         }
         
         if (timelinePayload.length > 0) {
-            await supabase.schema('spatial_os').from('spatial_timeline').insert(timelinePayload)
+            const visitorId = get().visitorId;
+            await syncSpatialEvents(timelinePayload, visitorId);
         }
     }
   } catch (error) {

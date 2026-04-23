@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useCanvasStore } from '../store/useCanvasStore'
 import { Settings, History, Search, Plus, Undo, Redo } from 'lucide-react'
 
+import { AuthTriggerButton } from './auth/AuthGate'
+
 export const TopTabBar: React.FC = () => {
     // Only subscribe to the specific parts of the store we need
     const isMinimalHeader = useCanvasStore(state => state.isMinimalHeader)
@@ -111,6 +113,8 @@ export const TopTabBar: React.FC = () => {
                 </button>
 
                 <div className="w-[1px] h-4 bg-outline_variant/30 mx-1"></div>
+
+                <AuthTriggerButton />
             </div>
 
             <button
