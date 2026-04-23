@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AuthManager, useSupabaseAuth } from '@dopomogai/supabase-client/react';
+import { LoginPage, AuthLayout, useSupabaseAuth } from '@dopomogai/supabase-client/react';
 import { transferVisitorOwnership } from '../../api/api';
 import { useCanvasStore } from '../../store/useCanvasStore';
 
@@ -76,7 +76,7 @@ export const AuthModal: React.FC = () => {
                 </div>
                 
                 <div className="max-h-[70vh] overflow-y-auto custom-scrollbar">
-                    <AuthManager />
+                    <AuthLayout><LoginPage /></AuthLayout>
                 </div>
             </div>
         </div>
