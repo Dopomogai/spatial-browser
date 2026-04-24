@@ -20,6 +20,9 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('electron', {
       ipcRenderer: {
         send: (channel: string, ...args: any[]) => ipcRenderer.send(channel, ...args),
+        removeListener: (channel: string, func: (...args: any[]) => void) => {
+          ipcRenderer.removeListener(channel, func)
+        },
         on: (channel: string, func: (...args: any[]) => void) => {
           ipcRenderer.on(channel, (event, ...args) => func(...args))
         }
