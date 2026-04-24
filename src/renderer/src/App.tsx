@@ -4,7 +4,7 @@ import { TopTabBar } from "./components/TopTabBar"
 // Omnibar
 import { useCanvasStore } from './store/useCanvasStore'
 import { AuthModal } from './components/auth/AuthGate'
-import { SupabaseAuthProvider } from '@dopomogai/supabase-client/dist/react/index'
+import { SupabaseAuthProvider } from '@dopomogai/supabase-client/react'
 
 function AppContent() {
   const { setOmnibarOpen, setSpacebarHeld, loadInitialState, addWidget, updateWidget } = useCanvasStore()

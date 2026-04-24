@@ -71,5 +71,9 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.1.0"
+  },
+  "overrides": {
+    "react": "$react",
+    "react-dom": "$react-dom"
   }
 }
