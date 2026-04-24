@@ -584,8 +584,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
         ...targetNode,
         id: `${targetNode.type}_${Date.now()}`,
         position: {
-          x: (targetNode.position?.x ?? 0) + 50,
-          y: (targetNode.position?.y ?? 0) + 50
+          x: targetNode.position.x + 50,
+          y: targetNode.position.y + 50
         },
         data: {
           ...targetNode.data,
