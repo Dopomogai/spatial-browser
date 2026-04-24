@@ -1,5 +1,14 @@
-# Performance Lag with Multiple Webviews
-**Issue:** Even simply having 3+ websites open introduces noticeable system lag and canvas sluggishness. We need to implement a sweeping performance profile and look into Electron/Chromium render partitioning or disabling hardware acceleration flags if GPU contexts are clashing.
-**Hypothesis:** WebGL contexts from active `<webview>` sources and React Flow canvas rendering are conflicting over GPU resources, or Zustand state bindings are thrashing React re-renders globally.
-**Actionable Fix 1:** Identify if `hardware-acceleration` in `main/index.ts` should be modified or if specific webview `webpreferences` flags (e.g. `disableBlinkFeatures`) can optimize multi-frame Chromium offscreen rendering.
-**Actionable Fix 2:** Combine with hysteresis tracking in `v2-favicons-and-sleeping-tabs.md` to aggressively unload DOM memory from Chromium instances not currently visible on the active 2D grid.
+# V2 Render Scaling: 3+ Webview Performance Collapse
+
+## Current Regression & Issues
+When more than 3 Chromium `<webview>` tags are concurrently mounted on the endless React Flow grid, framerates plummet well beneath target thresholds. Input lag spikes on drag, and CPU overhead climbs significantly.
+
+## Cause & Hypothesis
+Standard DOM logic keeps all `<webview>` processes (and their isolated guest GPU contexts) actively rendering full frames regardless of whether they exist visually within the 1080p 'viewport' camera.
+Electron/Chromium handles 2-3 tabs fine, but endless spatial canvases require aggressive "Culling" — destroying the DOM node and replacing it with a cached screenshot `<img>` when it drifts offscreen.
+
+## Action Plan
+1. Implement Spatial Culling bounds in `useCanvasStore.ts`. Map `viewport.zoom` and `viewport.x/y` to calculate which Nodes are strictly visually on-screen vs off-screen.
+2. Introduce `interactionState: 'active' | 'sleeping'` to `BrowserWidgetData`.
+3. When `sleeping`, `BrowserWidgetNode.tsx` must conditionally render an `<img>` of its last known state, and completely nullify the `<webview src={url} />` DOM node to free its VRAM/Electron process thread.
+4. If clicked, or panned back into view, transition state back to `active`.
