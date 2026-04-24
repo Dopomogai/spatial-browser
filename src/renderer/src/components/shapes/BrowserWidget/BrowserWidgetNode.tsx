@@ -251,7 +251,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data, po
             type="button"
             onClick={() => {
               useCanvasStore.getState().toggleFullscreen(id);
-              window.electron?.ipcRenderer?.send('toggle-fullscreen');
+              window.electron?.ipcRenderer.send('toggle-maximize');
             }} 
             className="w-3 h-3 rounded-full bg-[#34c759] hover:opacity-80 flex items-center justify-center text-black font-bold"
           ></button>

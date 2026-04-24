@@ -480,12 +480,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
         if (node.id === id) {
           // If we are currently maximizing
           if (isMaxing) {
-              const flowX = -viewport.x / viewport.zoom;
-              const flowY = -viewport.y / viewport.zoom;
+              // We want our element to exactly fill the window
+              // So, flow coordinates must be what gives us 0,0 on screen
+              const targetFlowX = -viewport.x / viewport.zoom;
+              const targetFlowY = -viewport.y / viewport.zoom;
               
               return {
                 ...node,
-                position: { x: flowX, y: flowY },
+                position: { x: targetFlowX, y: targetFlowY },
                 data: {
                   ...node.data,
                   w: window.innerWidth / viewport.zoom,
