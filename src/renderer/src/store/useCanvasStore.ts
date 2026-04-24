@@ -427,8 +427,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
         type: 'settingsWidget',
         position: { x, y },
         data: {
-          w: 400,
-          h: 500,
+          w: 800,
+          h: 600,
           interactionState: 'active'
         }
       } as any // We override AppNode type strictly for the settings node which is allowed loosely in layout

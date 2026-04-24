@@ -321,7 +321,7 @@ export const BrowserWidgetNode: React.FC<NodeProps> = React.memo(({ id, data, po
         <div className={`absolute inset-0 top-0 h-10 ${widget.interactionState === 'active' ? 'cursor-move pointer-events-auto custom-drag-handle' : 'pointer-events-none'}`} />
         
         {widget.url === 'about:blank#settings' || widget.url.startsWith('about:blank#settings') ? (
-            <div className="w-full h-full pointer-events-auto overflow-hidden">
+            <div className="w-full h-full pointer-events-auto overflow-hidden nopan nowheel">
                 <SettingsWidgetComponent shape={{ id }} />
             </div>
         ) : widget.url.startsWith('about:blank#history') ? (

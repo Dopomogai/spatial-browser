@@ -34,7 +34,7 @@ export const SettingsWidgetComponent: React.FC<{ shape?: any; id?: string }> = (
       }}
     >
       {/* Left Sidebar */}
-      <div className="w-1/3 bg-surface_container_lowest/50 border-r border-white/5 p-3 space-y-1">
+      <div className="w-1/3 bg-surface_container_lowest/50 border-r border-white/5 p-3 space-y-1 overflow-y-auto no-scrollbar nopan nowheel" onPointerDown={(e) => e.stopPropagation()}>
         <div className="px-2 py-3 mb-2 flex items-center space-x-2 text-white">
           <Settings size={18} className="text-primary"/>
           <span className="font-semibold text-sm">Settings</span>
@@ -48,7 +48,7 @@ export const SettingsWidgetComponent: React.FC<{ shape?: any; id?: string }> = (
       </div>
 
       {/* Right Content Area */}
-      <div className="w-2/3 p-6 overflow-y-auto no-scrollbar" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="w-2/3 p-6 overflow-y-auto no-scrollbar nopan nowheel" onPointerDown={(e) => e.stopPropagation()}>
         {activeTab === 'general' && (
           <div className="space-y-6">
             <h2 className="text-white text-lg font-semibold tracking-tight">General Workflow</h2>
