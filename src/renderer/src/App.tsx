@@ -5,6 +5,7 @@ import { TopTabBar } from "./components/TopTabBar"
 import { useCanvasStore } from './store/useCanvasStore'
 import { AuthModal } from './components/auth/AuthGate'
 import { SupabaseAuthProvider } from '@dopomogai/supabase-client/react'
+import { supabase } from './lib/supabase'
 
 function AppContent() {
   const { setOmnibarOpen, setSpacebarHeld, loadInitialState, addWidget, updateWidget } = useCanvasStore()
@@ -172,8 +173,7 @@ function AppContent() {
 function App() {
   return (
     <SupabaseAuthProvider
-        supabaseUrl={import.meta.env.VITE_SUPABASE_URL}
-        supabaseAnonKey={import.meta.env.VITE_SUPABASE_ANON_KEY}
+        supabaseClient={supabase}
     >
       <AppContent />
     </SupabaseAuthProvider>
