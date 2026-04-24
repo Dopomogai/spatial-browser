@@ -395,8 +395,8 @@ const CanvasContent = () => {
 export const SpatialCanvas = () => {
     return (
         <ReactFlowProvider>
-            <Omnibar />
             <CanvasContent />
+            <Omnibar />
         </ReactFlowProvider>
     )
 }
