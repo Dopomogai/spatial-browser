@@ -1,0 +1,65 @@
+# CanvasOS spatial-browser — budai manifest.
+#
+# Pin to a tagged registry release. Bump deliberately; review each
+# changelog entry between bumps. See https://github.com/Dopomogai/budai
+# and `.agents/base/` for what's currently resolved here.
+
+budai-version: 0.2.0
+
+included:
+  roles:
+    - planner: ^1.0.0
+    - implementer: ^1.0.0
+    - verifier: ^1.0.0
+    - judge: ^1.0.0
+    - librarian: ^1.0.0
+
+  skills:
+    - build-task-bundle: ^1.0.0
+    - peer-review: ^1.0.0
+    - audit-docs: ^1.0.0
+    - run-preflight: ^1.0.0
+    - capture-evidence: ^1.0.0
+    - regenerate-index: ^1.0.0
+    - promote-lesson: ^1.0.0
+    - discover-standards: ^1.0.0
+
+  workflows:
+    - ship-feature: ^1.0.0
+    - fix-bug: ^1.0.0
+    - refactor: ^1.0.0
+    - audit-repo: ^1.0.0
+
+  runners:
+    - claude-code: ^0.1.0
+
+# Local files override base where present. Conventions are merged.
+overrides:
+  conventions: local/conventions.md
+
+# CanvasOS-specific extensions. None yet — to be added as patterns emerge
+# (likely candidates: add-widget, add-ipc-channel, add-shape).
+local-only:
+  skills: []
+  roles: []
+  workflows: []
+
+# Phase 1 single-role validation: human approves at every gate.
+# Tighten only after roles prove themselves.
+human-gates:
+  - end-of-planner
+  - end-of-implementer
+  - end-of-verifier
+  - end-of-judge
+
+defaults:
+  fan-out: 1
+  retry-budget: 2
+  bundle-budget: 80000
+  runner: claude-code
+  peer-reviewers: 0
+  model-default: sonnet
+
+# Tasks layout exception: CanvasOS uses tasks/{backlog,todo,in-progress,done}/
+# rather than budai's tasks/{open,archive}/. See local/conventions.md.
+tasks-layout: legacy-four-folder
