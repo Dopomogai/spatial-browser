@@ -1,3 +1,12 @@
+/**
+ * @purpose xyflow ReactFlow host: registers nodeTypes, manages viewport save, sleeping-tab hysteresis, context menu, and custom canvas events.
+ * @why xyflow requires a single ReactFlowProvider; canvas-level events are centralized here to avoid each node type subscribing independently. This component is also the mounting surface for all future agent widgets (RemoteAgentWidget, GoogleSheetWidget, TerminalWidget, FileDiffWidget, TodoListWidget) as the agent-operator canvas evolves.
+ * @role component
+ * @exports SpatialCanvas
+ * @uses @xyflow/react, useCanvasStore, BrowserWidgetNode, SettingsWidgetComponent, TextNodeComponent, Omnibar
+ * @stability experimental
+ * @gotchas Duplicate flushSpatialEvents setInterval(1500ms) — App.tsx also has one; calls setTopTabBarVisible via (state: any) cast — existence not verified, may crash on fullscreen toggle if missing; handleSpawnCanvases hardcodes type:'browser_widget' (canvases widget is dead)
+ */
 import React, { useEffect, useState } from 'react'
 import { ReactFlow, Background, MiniMap, Controls, useReactFlow, ReactFlowProvider } from '@xyflow/react'
 import type { NodeTypes } from '@xyflow/react'

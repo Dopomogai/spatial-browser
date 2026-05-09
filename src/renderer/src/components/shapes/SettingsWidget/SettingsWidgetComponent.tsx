@@ -1,3 +1,12 @@
+/**
+ * @purpose Settings panel UI: theme, grid, tab size, and search engine toggles.
+ * @why Reused as an inline panel inside BrowserWidget (about:blank#settings) AND as a standalone xyflow node, so it lives independently of either parent.
+ * @role component
+ * @exports SettingsWidgetComponent
+ * @uses useCanvasStore, lucide-react
+ * @stability experimental
+ * @gotchas Dual entry-point: receives {id} from BrowserWidgetNode and {shape} from SettingsWidgetShapeUtil; most settings tabs are stubs ("Coming Soon Phase 2")
+ */
 import React, { useState } from 'react'
 
 import { Settings, Shield, Keyboard, Monitor, Key, Zap } from 'lucide-react'

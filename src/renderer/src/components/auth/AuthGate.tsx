@@ -1,3 +1,11 @@
+/**
+ * @purpose Login modal and top-bar auth button; listens for the 'open-login-modal' custom event to trigger auth UI.
+ * @why Event-bus pattern avoids prop-drilling auth UI through the canvas component tree.
+ * @role component
+ * @exports AuthTriggerButton, AuthModal
+ * @uses @dopomogai/supabase-client/react, useCanvasStore, transferVisitorOwnership
+ * @stability experimental
+ */
 import React, { useState } from 'react';
 import { LoginPage, AuthLayout, useSupabaseAuth } from '@dopomogai/supabase-client/react';
 import { transferVisitorOwnership } from '../../api/api';

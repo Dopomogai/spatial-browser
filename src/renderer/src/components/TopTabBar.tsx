@@ -1,3 +1,12 @@
+/**
+ * @purpose Persistent top-right HUD bar: undo/redo buttons, minimal/full header toggle, auth trigger, and canvas action shortcuts.
+ * @why Provides always-accessible canvas controls without occupying canvas space; collapses to a minimal pill on request.
+ * @role component
+ * @exports TopTabBar
+ * @uses useCanvasStore, AuthTriggerButton, lucide-react
+ * @stability experimental
+ * @gotchas Subscribes to entire store via useCanvasStore.subscribe() to force re-render — causes re-render on every store mutation regardless of relevance; Cmd+Z handler duplicated here and in App.tsx
+ */
 import React, { useEffect, useState } from 'react'
 import { useCanvasStore } from '../store/useCanvasStore'
 import { Settings, History, Search, Plus, Undo, Redo } from 'lucide-react'

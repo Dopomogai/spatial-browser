@@ -1,3 +1,12 @@
+/**
+ * @purpose Playwright e2e tests: omnibar, render culling, and fullscreen portal flows.
+ * @why End-to-end coverage of canvas interactions requires the full Electron runtime; unit tests cannot reach webview or IPC boundaries.
+ * @role config
+ * @exports -
+ * @uses @playwright/test, playwright
+ * @stability experimental
+ * @gotchas Requires a prior electron-vite build (out/main/index.js must exist); localStorage.clear() in beforeEach has no effect — app uses idb-keyval/IndexedDB, not localStorage
+ */
 import { test, expect } from '@playwright/test'
 import { _electron as electron, ElectronApplication } from 'playwright'
 import { join, dirname } from 'path'

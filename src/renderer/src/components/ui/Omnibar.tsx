@@ -1,3 +1,12 @@
+/**
+ * @purpose Cmd+K URL/search launcher floating overlay for spawning new browser widgets.
+ * @why Decoupled from canvas geometry; receives canvas-coordinate spawn position from store to avoid threading position through props.
+ * @role component
+ * @exports Omnibar
+ * @uses useCanvasStore
+ * @stability stable
+ * @gotchas When omnibarPosition is null (Cmd+K without a prior right-click), centerX/Y are zeroed before addWidget — overrides addWidget's own fallback positioning
+ */
 import React, { useState, useEffect, useRef } from 'react'
 import { useCanvasStore } from '../../store/useCanvasStore'
 import { Search } from 'lucide-react'

@@ -1,3 +1,12 @@
+/**
+ * @purpose HTTP client to api.dopomogai.com for spatial events; stub for visitor-to-user ownership transfer.
+ * @why Separates HTTP transport from store logic; keeps auth header injection in one place.
+ * @role util
+ * @exports syncSpatialEvents, transferVisitorOwnership
+ * @uses supabase
+ * @stability experimental
+ * @gotchas transferVisitorOwnership always returns true (mocked); throws on cold-start with no session and no visitorId — triggers on every flush cycle
+ */
 import { supabase } from '../lib/supabase';
 
 const API_BASE_URL = 'https://api.dopomogai.com';

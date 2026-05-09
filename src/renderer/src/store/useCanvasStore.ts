@@ -1,3 +1,12 @@
+/**
+ * @purpose Central Zustand store: nodes, edges, undo/redo, viewport, render culling, sync queue, Supabase realtime, and workspace profile management.
+ * @why Single-store pattern co-locates all canvas state and avoids prop-drilling. This store is the runtime hub for the agent-operator canvas — Phase B will route incoming SSE events through here to spawn TerminalWidget, FileDiffWidget, TodoListWidget, and RemoteAgentWidget nodes.
+ * @role store
+ * @exports useCanvasStore, CanvasStore, BrowserWidgetData, TextNodeData, AppNode, BrowserAppNode, TextAppNode, WorkspaceProfile, SpatialTimelineEvent
+ * @uses zustand, idb-keyval, @xyflow/react, supabase, syncSpatialEvents
+ * @stability experimental
+ * @gotchas Module-level saveTimeout is a singleton — breaks if store is instantiated more than once; hardcoded UUID '00000000-0000-0000-0000-000000000000' for canvas_id everywhere; flushSyncQueue referenced in App.tsx but the method is named flushSpatialEvents — mismatch is the broken-on-start culprit
+ */
 // V2 Store utilizing @xyflow/react native types
 import { create } from 'zustand'
 import { set as idbSet, get as idbGet } from 'idb-keyval'

@@ -1,3 +1,12 @@
+/**
+ * @purpose Vitest unit tests for store: undo/redo, widget spawn math, and render culling logic.
+ * @why Unit-test coverage for pure store logic without requiring the Electron runtime.
+ * @role config
+ * @exports -
+ * @uses useCanvasStore, vitest
+ * @stability experimental
+ * @gotchas Fails if supabase client throws at import (e.g., missing env in CI); mocks idb-keyval and window but not all Electron globals
+ */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useCanvasStore } from './useCanvasStore'
 

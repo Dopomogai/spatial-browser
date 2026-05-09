@@ -1,3 +1,12 @@
+/**
+ * @purpose Root shell: wraps the app in SupabaseAuthProvider, wires global key listeners, runs the sync flusher interval.
+ * @why Auth provider must wrap the full component tree; global keydown wiring belongs at root. This shell is also the top-level mount point for the agent-operator canvas — future RemoteAgentWidget and GoogleSheetWidget instances will be orchestrated through the store this component initializes.
+ * @role component
+ * @exports App
+ * @uses useCanvasStore, SpatialCanvas, TopTabBar, AuthModal, @dopomogai/supabase-client/react, supabase
+ * @stability experimental
+ * @gotchas Duplicate Space-key handler (lines 31 and 46); flusher setInterval(1500ms) here AND another in SpatialCanvas (double-flush); calls flushSyncQueue() but store method is named flushSpatialEvents — TypeError every tick and likely the broken-on-start culprit; calls setTopTabBarVisible via (state: any) cast — existence not verified, may crash on fullscreen toggle if missing
+ */
 import React, { useEffect, useState } from 'react'
 import { SpatialCanvas } from "./components/canvas/SpatialCanvas"
 import { TopTabBar } from "./components/TopTabBar"

@@ -1,3 +1,12 @@
+/**
+ * @purpose Playwright e2e tests: top-bar toggle, settings panel, and context menu interactions.
+ * @why Same build-dependent e2e coverage as canvas.spec.ts; kept separate to isolate UI control assertions.
+ * @role config
+ * @exports -
+ * @uses @playwright/test, playwright
+ * @stability experimental
+ * @gotchas Same idb-keyval/localStorage mismatch as canvas.spec.ts; locator 'Show Canvas Grid' does not match actual UI label 'Canvas Grid' — assertion will fail
+ */
 import { test, expect } from '@playwright/test'
 import { _electron as electron, ElectronApplication } from 'playwright'
 import { join, dirname } from 'path'

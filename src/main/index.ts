@@ -1,3 +1,12 @@
+/**
+ * @purpose Electron main process: creates BrowserWindow, runs WebSocket server for AI backend, registers IPC handlers.
+ * @why Electron requires a separate Node.js process for OS-level window and webview lifecycle; WebSocket chosen over IPC to allow external processes (AI agents) to connect directly.
+ * @role main-process
+ * @exports -
+ * @uses electron, ws, @electron-toolkit/utils
+ * @stability experimental
+ * @gotchas webSecurity:false hardcoded ("V1 only"); WS port falls back to 8080 unconditionally; --remote-debugging-port=9222 always-on; no ipcMain handler for 'toggle-maximize' (renderer sends it — likely contributing to broken-on-start state)
+ */
 import { app, shell, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'

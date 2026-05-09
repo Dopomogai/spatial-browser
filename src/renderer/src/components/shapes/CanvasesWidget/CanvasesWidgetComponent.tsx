@@ -1,3 +1,12 @@
+/**
+ * @purpose UI for workspace-browser widget showing a mocked canvas list.
+ * @why Pre-migration tldraw remnant; superseded by xyflow nodeTypes.
+ * @role component
+ * @exports CanvasesWidgetComponent
+ * @uses tldraw (HTMLContainer), lucide-react
+ * @stability deprecated
+ * @gotchas DEAD CODE from tldraw → xyflow migration. tldraw not in package.json (may or may not exist transiently in node_modules). Not referenced in live xyflow nodeTypes. Flagged for deletion in first cleanup task.
+ */
 import React, { useState } from 'react'
 import { BaseBoxShapeUtil, HTMLContainer } from 'tldraw'
 import { Database, Plus, Search, FolderClosed, LayoutGrid } from 'lucide-react'

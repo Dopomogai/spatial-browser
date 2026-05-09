@@ -1,3 +1,12 @@
+/**
+ * @purpose Exposes window.electron.ipcRenderer and window.api via contextBridge to the renderer process.
+ * @why contextIsolation requires an explicit IPC bridge; raw ipcRenderer is surfaced for renderer-side flexibility.
+ * @role bridge
+ * @exports api
+ * @uses electron (contextBridge, ipcRenderer)
+ * @stability stable
+ * @gotchas sendToHost(Cmd+K) silently fails outside a webview context; getPreloadPath() returns __filename for webview preload injection
+ */
 import { contextBridge, ipcRenderer } from 'electron'
 
 // Custom APIs for renderer

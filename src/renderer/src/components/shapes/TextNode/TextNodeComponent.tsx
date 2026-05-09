@@ -1,3 +1,12 @@
+/**
+ * @purpose xyflow node for freeform text notes on the spatial canvas.
+ * @why Simple spatial annotation; registered as an xyflow node-type so text notes coexist with browser widgets on the same canvas.
+ * @role node-type
+ * @exports TextNodeComponent
+ * @uses useCanvasStore
+ * @stability stable
+ * @gotchas Manual horizontal-only resize via raw mousemove; height auto-grows via scrollHeight — may fight xyflow NodeResizer if one is added later
+ */
 import React, { useRef, useEffect } from 'react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
 

@@ -1,3 +1,12 @@
+/**
+ * @purpose xyflow node for browser tabs: webview, tab chrome (URL bar, nav controls), and sleeping/minimized/fullscreen states.
+ * @why Core product feature; xyflow node-type pattern allows unlimited tab instances on canvas and is the direct precursor for RemoteAgentWidget (token-stream + tool-call rendering) and GoogleSheetWidget (agent-editable sheet on canvas).
+ * @role node-type
+ * @exports BrowserWidgetNode
+ * @uses useCanvasStore, @xyflow/react (NodeResizer, useReactFlow), lucide-react, SettingsWidgetComponent
+ * @stability experimental
+ * @gotchas Sends ipcRenderer 'toggle-maximize' but main process has no handler (silent fail); webview preload via window.api.getPreloadPath() may be undefined in non-Electron environments; polled context-menu setInterval(500ms) is a code smell; uses both useReactFlow().setNodes AND store — dual mutation path
+ */
 import React, { useState, useEffect, useRef } from 'react'
 import { useCanvasStore } from '../../../store/useCanvasStore'
 import { Globe, X, Maximize2, ChevronLeft, ChevronRight, RotateCw, Copy } from 'lucide-react'

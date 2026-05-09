@@ -1,3 +1,12 @@
+/**
+ * @purpose tldraw ShapeUtil wrapper for the canvases widget.
+ * @why Pre-migration tldraw remnant; superseded by xyflow nodeTypes.
+ * @role node-type
+ * @exports CanvasesWidgetShapeUtil, CanvasesWidgetShape
+ * @uses tldraw, @tldraw/tlschema, CanvasesWidgetComponent
+ * @stability deprecated
+ * @gotchas DEAD CODE from tldraw → xyflow migration. tldraw not in package.json (may or may not exist transiently in node_modules). Not referenced in live xyflow nodeTypes. Flagged for deletion in first cleanup task.
+ */
 import React from 'react'
 import { BaseBoxShapeUtil } from 'tldraw'
 import type { TLBaseShape } from '@tldraw/tlschema'
