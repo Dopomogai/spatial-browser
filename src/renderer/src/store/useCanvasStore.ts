@@ -5,7 +5,7 @@
  * @exports useCanvasStore, CanvasStore, BrowserWidgetData, TextNodeData, AppNode, BrowserAppNode, TextAppNode, WorkspaceProfile, SpatialTimelineEvent
  * @uses zustand, idb-keyval, @xyflow/react, supabase, syncSpatialEvents
  * @stability experimental
- * @gotchas Module-level saveTimeout is a singleton — breaks if store is instantiated more than once; hardcoded UUID '00000000-0000-0000-0000-000000000000' for canvas_id everywhere; flushSyncQueue referenced in App.tsx but the method is named flushSpatialEvents — mismatch is the broken-on-start culprit
+ * @gotchas Module-level saveTimeout is a singleton — breaks if store is instantiated more than once; hardcoded UUID '00000000-0000-0000-0000-000000000000' for canvas_id everywhere
  */
 // V2 Store utilizing @xyflow/react native types
 import { create } from 'zustand'

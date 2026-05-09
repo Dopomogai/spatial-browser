@@ -5,7 +5,7 @@
  * @exports App
  * @uses useCanvasStore, SpatialCanvas, TopTabBar, AuthModal, @dopomogai/supabase-client/react, supabase
  * @stability experimental
- * @gotchas Duplicate Space-key handler (lines 31 and 46); flusher setInterval(1500ms) here AND another in SpatialCanvas (double-flush); calls flushSyncQueue() but store method is named flushSpatialEvents — TypeError every tick and likely the broken-on-start culprit; calls setTopTabBarVisible via (state: any) cast — existence not verified, may crash on fullscreen toggle if missing
+ * @gotchas calls setTopTabBarVisible via (state: any) cast — existence not verified, may crash on fullscreen toggle if missing
  */
 import React, { useEffect, useState } from 'react'
 import { SpatialCanvas } from "./components/canvas/SpatialCanvas"
@@ -23,11 +23,6 @@ function AppContent() {
   const [showNewProfileModal, setShowNewProfileModal] = useState(false)
 
   useEffect(() => {
-    // Sync Flusher Interval
-    const flusher = setInterval(() => {
-      useCanvasStore.getState().flushSyncQueue();
-    }, 1500);
-
     loadInitialState()
 
     const handleProfileModalOpen = () => setShowNewProfileModal(true)
@@ -52,17 +47,11 @@ function AppContent() {
         e.preventDefault()
         setOmnibarOpen(true)
       }
-      if (e.code === 'Space') {
-        setSpacebarHeld(true)
-      }
     }
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'Shift') {
         window.dispatchEvent(new CustomEvent('shift-state-change', { detail: { held: false } }))
-      }
-      if (e.code === 'Space') {
-        setSpacebarHeld(false)
       }
       if (e.code === 'Space') {
         setSpacebarHeld(false)
@@ -113,7 +102,6 @@ function AppContent() {
           window.electron.ipcRenderer.removeListener?.('redo-action', handleIpcRedo)
           window.electron.ipcRenderer.removeListener?.('cut-action', handleIpcCut)
       }
-      clearInterval(flusher);
     }
   }, [])
 

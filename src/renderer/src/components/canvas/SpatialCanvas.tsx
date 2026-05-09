@@ -5,7 +5,7 @@
  * @exports SpatialCanvas
  * @uses @xyflow/react, useCanvasStore, BrowserWidgetNode, SettingsWidgetComponent, TextNodeComponent, Omnibar
  * @stability experimental
- * @gotchas Duplicate flushSpatialEvents setInterval(1500ms) — App.tsx also has one; calls setTopTabBarVisible via (state: any) cast — existence not verified, may crash on fullscreen toggle if missing; handleSpawnCanvases hardcodes type:'browser_widget' (canvases widget is dead)
+ * @gotchas calls setTopTabBarVisible via (state: any) cast — existence not verified, may crash on fullscreen toggle if missing; handleSpawnCanvases hardcodes type:'browser_widget' (canvases widget is dead)
  */
 import React, { useEffect, useState } from 'react'
 import { ReactFlow, Background, MiniMap, Controls, useReactFlow, ReactFlowProvider } from '@xyflow/react'
